@@ -16,8 +16,7 @@ source("/home/jtimm/pCloudDrive/GitHub/packages/render_toc.R")
 
 `r paste0('*Updated: ', Sys.Date(),'*')` 
 
-> An attempt at organizing some `spaCy` workflows -- by a lowly R programmer.  Some functions for disentangling `spaCy` output.  Designed for working with actual corpora, as opposed to the `This is a sentence.`-based tutorial type which is ubiquitous in the python/spacy online literature. 
-
+> An attempt at organizing some `spaCy` workflows -- by a lowly R programmer.  Some functions for disentangling `spaCy` output.  For working with actual corpora, as opposed to `nlp("This is a sentence.")`.
 
 
 ---
@@ -58,6 +57,7 @@ source activate scispacy
 conda install transformers
 /home/jtimm/anaconda3/envs/scispacy/bin/pip install scispacy
 /home/jtimm/anaconda3/envs/scispacy/bin/pip install pysbd
+/home/jtimm/anaconda3/envs/scispacy/bin/pip install medspacy
 
 /home/jtimm/anaconda3/envs/scispacy/bin/pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
 
@@ -148,7 +148,7 @@ import scispacy
 
 * An entity linker -- here `umls`, but `mesh`, `rxnorm`, `go`, and `hpo` are also available knowledge bases that can be linked to.
 
-* A homonym detector.
+* A hyponym detector.
 
 ```{python eval=FALSE}
 nlp = spacy.load("en_ner_bc5cdr_md")
@@ -460,6 +460,59 @@ mts_df <- reticulate::r_to_py(mts)
 ```
 
 
+```{python eval=FALSE, include=FALSE}
+# jupyter-notebook
+import medspacy
+nlp = medspacy.load()
+sectionizer = nlp.add_pipe("medspacy_sectionizer")
+
+texts0 = list(r.mts_df['transcription'][1:100])
+doc = list(nlp.pipe(texts0))
+```
+
+
+
+```{python eval=FALSE, include=FALSE}
+   is_negated
+    is_uncertain
+    is_historical
+    is_family
+    is_hypothetical
+
+for ent in doc.ents:
+    print(ent, ent._.section.category, sep="  |  ")
+    print("Historical:", ent._.is_historical, "\tFamily:", ent._.is_family, "\tHypothetical:", ent._.is_hypothetical)
+    print()
+```
+ 
+
+
+```{python}
+def spacy_get_nps(docs):
+
+    details_dict = {
+      "doc_id": [], 
+      "sent_id": [],
+      "nounc": [], 
+      "start": [], 
+      "end": []
+      }
+    
+    for ix, doc in enumerate(docs):
+      for sent_i, sent in enumerate(doc.sents):
+        
+        for nc in sent.noun_chunks:
+          details_dict["doc_id"].append(ix)
+          details_dict["sent_id"].append(sent_i)
+          details_dict["nounc"].append(nc.text)
+          details_dict["start"].append(nc.start)
+          details_dict["end"].append(nc.end)
+    
+    dd =  pd.DataFrame.from_dict(details_dict)     
+    return dd
+  
+sp_noun_phrases = spacy_get_nps(doc)
+```
 
 
 
@@ -467,9 +520,7 @@ mts_df <- reticulate::r_to_py(mts)
 
 ## References 
 
-Eyre, A.B. Chapman, K.S. Peterson, J. Shi, P.R. Alba, M.M. Jones, T.L. Box, S.L. DuVall, O. V Patterson,
-Launching into clinical space with medspaCy: a new clinical text processing toolkit in Python,
-AMIA Annu. Symp. Proc. 2021 (in Press. (n.d.). 
+Eyre, A.B. Chapman, K.S. Peterson, J. Shi, P.R. Alba, M.M. Jones, T.L. Box, S.L. DuVall, O. V Patterson, Launching into clinical space with medspaCy: a new clinical text processing toolkit in Python, AMIA Annu. Symp. Proc. 2021 (in Press. (n.d.).
 http://arxiv.org/abs/2106.07799.
 
 

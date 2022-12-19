@@ -3,10 +3,9 @@
 *Updated: 2022-12-19*
 
 > An attempt at organizing some `spaCy` workflows – by a lowly R
-> programmer. Some functions for disentangling `spaCy` output. Designed
-> for working with actual corpora, as opposed to the
-> `This is a sentence.`-based tutorial type which is ubiquitous in the
-> python/spacy online literature.
+> programmer. Some functions for disentangling `spaCy` output. For
+> working with actual corpora, as opposed to
+> `nlp("This is a sentence.")`.
 
 ------------------------------------------------------------------------
 
@@ -37,6 +36,7 @@ source activate scispacy
 conda install transformers
 /home/jtimm/anaconda3/envs/scispacy/bin/pip install scispacy
 /home/jtimm/anaconda3/envs/scispacy/bin/pip install pysbd
+/home/jtimm/anaconda3/envs/scispacy/bin/pip install medspacy
 
 /home/jtimm/anaconda3/envs/scispacy/bin/pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
 
@@ -99,7 +99,7 @@ import scispacy
 -   An entity linker – here `umls`, but `mesh`, `rxnorm`, `go`, and
     `hpo` are also available knowledge bases that can be linked to.
 
--   A homonym detector.
+-   A hyponym detector.
 
 ``` python
 nlp = spacy.load("en_ner_bc5cdr_md")
@@ -222,13 +222,13 @@ reticulate::py$sp_df |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | token           | token_order | sent_id | lemma           | ent_type | tag   | dep   | pos   | is_stop | is_alpha | is_digit | is_punct |
-|----:|:--------|------:|----:|:--------|:-----|:---|:---|:---|:----|:-----|:-----|:-----|
-|      0 | Lactoperoxidase |           0 |       0 | lactoperoxidase |          | NN    | nsubj | NOUN  | FALSE   | TRUE     | FALSE    | FALSE    |
-|      0 | (               |           1 |       0 | (               |          | -LRB- | punct | PUNCT | FALSE   | FALSE    | FALSE    | TRUE     |
-|      0 | LPO             |           2 |       0 | lpo             |          | NN    | appos | NOUN  | FALSE   | TRUE     | FALSE    | FALSE    |
-|      0 | )               |           3 |       0 | )               |          | -RRB- | punct | PUNCT | FALSE   | FALSE    | FALSE    | TRUE     |
-|      0 | is              |           4 |       0 | be              |          | VBZ   | cop   | VERB  | TRUE    | TRUE     | FALSE    | FALSE    |
+| doc_id | token                       | token_order | sent_id | lemma                       | ent_type | tag   | dep      | pos   | is_stop | is_alpha | is_digit | is_punct |
+|---:|:-----------|-----:|----:|:-----------|:----|:---|:----|:---|:----|:----|:----|:----|
+|      0 | Trifluoromethyl-substituted |           0 |       0 | trifluoromethyl-substituted | CHEMICAL | JJ    | amod     | ADJ   | FALSE   | FALSE    | FALSE    | FALSE    |
+|      0 | cyclopropanes               |           1 |       0 | cyclopropane                | CHEMICAL | NNS   | nsubj    | NOUN  | FALSE   | TRUE     | FALSE    | FALSE    |
+|      0 | (                           |           2 |       0 | (                           | CHEMICAL | -LRB- | punct    | PUNCT | FALSE   | FALSE    | FALSE    | TRUE     |
+|      0 | CF3                         |           3 |       0 | cf3                         | CHEMICAL | NN    | compound | NOUN  | FALSE   | FALSE    | FALSE    | FALSE    |
+|      0 | -CPAs                       |           4 |       0 | -cpas                       | CHEMICAL | CD    | appos    | NUM   | FALSE   | FALSE    | FALSE    | FALSE    |
 
 ### spacy_get_entities
 
@@ -283,13 +283,13 @@ reticulate::py$sp_entities |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | sent_id | ent_text      | ent_label | cui      | descriptor               | score | ent_start | ent_end |
-|-----:|------:|:---------|:-------|:------|:----------------|:----|-------:|------:|
-|      0 |       5 | nanoparticles | CHEMICAL  | C1450054 | Artificial nanoparticles | 1     |       130 |     131 |
-|      0 |       5 | °             | CHEMICAL  |          |                          |       |       148 |     149 |
-|      0 |       6 | P. aeruginosa | DISEASE   | C0033809 | Pseudomonas aeruginosa   | 1     |       164 |     166 |
-|      0 |       6 | S. aureus     | DISEASE   | C0038172 | Staphylococcus aureus    | 1     |       167 |     169 |
-|      0 |       7 | nanoparticles | CHEMICAL  | C1450054 | Artificial nanoparticles | 1     |       176 |     177 |
+| doc_id | sent_id | ent_text                                             | ent_label | cui      | descriptor  | score | ent_start | ent_end |
+|----:|-----:|:---------------------------|:------|:-----|:-------|:----|------:|-----:|
+|      0 |       0 | Trifluoromethyl-substituted cyclopropanes (CF3 -CPAs | CHEMICAL  |          |             |       |         0 |       5 |
+|      0 |       2 | biocatalyst                                          | CHEMICAL  | C0014442 | Enzymes     | 0.83  |        41 |      42 |
+|      2 |       2 | deoxyribose                                          | CHEMICAL  | C0011530 | Deoxyribose | 1     |        39 |      40 |
+|      2 |       2 | phosphate                                            | CHEMICAL  | C0031603 | Phosphates  | 1     |        42 |      43 |
+|      2 |       2 | adenine                                              | CHEMICAL  | C0001407 | adenine     | 1     |        60 |      61 |
 
 ### spacy_get_abbrevs
 
@@ -325,18 +325,18 @@ reticulate::py$sp_abbrevs |>
   slice(1:10) |> knitr::kable()
 ```
 
-| doc_id | abrv  | start | end | long_form            |
-|-------:|:------|------:|----:|:---------------------|
-|      0 | LPO   |   105 | 106 | Lactoperoxidase      |
-|      0 | LPO   |    20 |  21 | Lactoperoxidase      |
-|      0 | LPO   |    90 |  91 | Lactoperoxidase      |
-|      0 | LPO   |   223 | 224 | Lactoperoxidase      |
-|      0 | LPO   |     2 |   3 | Lactoperoxidase      |
-|      0 | LPO   |    50 |  51 | Lactoperoxidase      |
-|      2 | PLpro |   181 | 182 | Papain like Protease |
-|      2 | PLpro |   252 | 253 | Papain like Protease |
-|      2 | PLpro |   151 | 152 | Papain like Protease |
-|      2 | PLpro |   338 | 339 | Papain like Protease |
+| doc_id | abrv  | start | end | long_form                  |
+|-------:|:------|------:|----:|:---------------------------|
+|      4 | PLpro |   101 | 102 | Papain like Protease       |
+|      4 | PLpro |    51 |  52 | Papain like Protease       |
+|      4 | PLpro |   338 | 339 | Papain like Protease       |
+|      4 | PLpro |   296 | 297 | Papain like Protease       |
+|      4 | PLpro |   252 | 253 | Papain like Protease       |
+|      4 | PLpro |   151 | 152 | Papain like Protease       |
+|      4 | PLpro |   181 | 182 | Papain like Protease       |
+|      6 | HMTs  |    94 |  95 | histone methyltransferases |
+|      6 | HMTs  |   114 | 115 | histone methyltransferases |
+|      6 | HMTs  |    12 |  13 | histone methyltransferases |
 
 ### spacy_get_nps
 
@@ -372,13 +372,13 @@ reticulate::py$sp_noun_phrases |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | sent_id | nounc                               | start | end |
-|-------:|--------:|:------------------------------------|------:|----:|
-|      0 |       0 | Lactoperoxidase                     |     0 |   1 |
-|      0 |       0 | (LPO                                |     1 |   3 |
-|      0 |       1 | LPO                                 |    20 |  21 |
-|      0 |       1 | biocidal actions                    |    32 |  34 |
-|      0 |       2 | The wide spectrum biocidal activity |    44 |  49 |
+| doc_id | sent_id | nounc                                     | start | end |
+|-------:|--------:|:------------------------------------------|------:|----:|
+|      0 |       0 | Trifluoromethyl-substituted cyclopropanes |     0 |   2 |
+|      0 |       0 | an important class                        |     7 |  10 |
+|      0 |       1 | several methods                           |    17 |  19 |
+|      0 |       1 | stereoselective production                |    28 |  30 |
+|      0 |       1 | a formidable challenge                    |    34 |  37 |
 
 ### spacy_get_hyponyms
 
@@ -415,18 +415,18 @@ reticulate::py$sp_hearst |>
   slice(1:10) |> knitr::kable()
 ```
 
-| doc_id | pred       | sbj              | obj               |
-|-------:|:-----------|:-----------------|:------------------|
-|      1 | include    | efficacy effects | lung moisturizing |
-|      1 | include    | efficacy effects | dehumidification  |
-|      1 | include    | efficacy effects | detoxification    |
-|      2 | such_as    | Phytochemicals   | Tinosponone       |
-|      2 | such_as    | Phytochemicals   | Rhoifolin         |
-|      2 | such_as    | Phytochemicals   | Rosmanol          |
-|      2 | such_as    | Phytochemicals   | Berberin          |
-|      2 | such_as    | Phytochemicals   | Nimbin            |
-|      2 | such_as    | Phytochemicals   | drugs Elbasvir    |
-|      4 | especially | diseases         | cancer            |
+| doc_id | pred    | sbj              | obj               |
+|-------:|:--------|:-----------------|:------------------|
+|      2 | such_as | diseases         | cancer            |
+|      3 | include | efficacy effects | lung moisturizing |
+|      3 | include | efficacy effects | dehumidification  |
+|      3 | include | efficacy effects | detoxification    |
+|      4 | such_as | Phytochemicals   | Tinosponone       |
+|      4 | such_as | Phytochemicals   | Rhoifolin         |
+|      4 | such_as | Phytochemicals   | Rosmanol          |
+|      4 | such_as | Phytochemicals   | Berberin          |
+|      4 | such_as | Phytochemicals   | Nimbin            |
+|      4 | such_as | Phytochemicals   | drugs Elbasvir    |
 
 ## Medical transcript data
 
@@ -435,6 +435,33 @@ reticulate::py$sp_hearst |>
 ``` r
 mts <- clinspacy::dataset_mtsamples()
 mts_df <- reticulate::r_to_py(mts)
+```
+
+``` python
+def spacy_get_nps(docs):
+
+    details_dict = {
+      "doc_id": [], 
+      "sent_id": [],
+      "nounc": [], 
+      "start": [], 
+      "end": []
+      }
+    
+    for ix, doc in enumerate(docs):
+      for sent_i, sent in enumerate(doc.sents):
+        
+        for nc in sent.noun_chunks:
+          details_dict["doc_id"].append(ix)
+          details_dict["sent_id"].append(sent_i)
+          details_dict["nounc"].append(nc.text)
+          details_dict["start"].append(nc.start)
+          details_dict["end"].append(nc.end)
+    
+    dd =  pd.DataFrame.from_dict(details_dict)     
+    return dd
+  
+sp_noun_phrases = spacy_get_nps(doc)
 ```
 
 ## References
