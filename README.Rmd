@@ -16,7 +16,8 @@ source("/home/jtimm/pCloudDrive/GitHub/packages/render_toc.R")
 
 `r paste0('*Updated: ', Sys.Date(),'*')` 
 
-> An attempt at organizing some `spaCy` workflows -- by a lowly R programmer.  Some functions for disentangling `spaCy` output.  Designed for working with actual corpora, as opposed to the `This is a sentence.`-based tutorial type which is ubiquitous in the python/spacy online literature. Indeed a work in progress.     
+> An attempt at organizing some `spaCy` workflows -- by a lowly R programmer.  Some functions for disentangling `spaCy` output.  Designed for working with actual corpora, as opposed to the `This is a sentence.`-based tutorial type which is ubiquitous in the python/spacy online literature. 
+
 
 
 ---
@@ -44,6 +45,9 @@ render_toc(filename = "/home/jtimm/pCloudDrive/GitHub/git-projects/spacy-nlp/REA
            toc_depth = 3,
            base_level = 1)
 ```
+
+
+---
 
 
 ## Conda environment
@@ -146,18 +150,13 @@ import scispacy
 
 ```{python eval=FALSE}
 nlp = spacy.load("en_ner_bc5cdr_md")
-
 nlp.add_pipe("sentencizer", before = 'ner')
-
 from scispacy.abbreviation import AbbreviationDetector
 nlp.add_pipe("abbreviation_detector") # before="parser"
-
 from scispacy.linking import EntityLinker
 nlp.add_pipe("scispacy_linker", config={"resolve_abbreviations": True, "linker_name": "umls"})
-
 from scispacy.hyponym_detector import HyponymDetector
 nlp.add_pipe("hyponym_detector", last=True, config={"extended": False})
-
 linker = nlp.get_pipe("scispacy_linker")
 ```
 
@@ -441,6 +440,33 @@ reticulate::py$sp_hearst |>
 
 
 
+
 ## Medical transcript data
+
+> Data from R package `clinspacy` via https://mtsamples.com/
+
+```{r}
+mts <- clinspacy::dataset_mtsamples()
+mts_df <- reticulate::r_to_py(mts)
+```
+
+
+
+
+
+
+
+## References 
+
+Eyre, A.B. Chapman, K.S. Peterson, J. Shi, P.R. Alba, M.M. Jones, T.L. Box, S.L. DuVall, O. V Patterson,
+Launching into clinical space with medspaCy: a new clinical text processing toolkit in Python,
+AMIA Annu. Symp. Proc. 2021 (in Press. (n.d.). 
+http://arxiv.org/abs/2106.07799.
+
+
+Neumann, M., King, D., Beltagy, I., & Ammar, W. (2019). ScispaCy: fast and robust models for biomedical natural language processing. arXiv preprint arXiv:1902.07669.
+
+
+
 
 
