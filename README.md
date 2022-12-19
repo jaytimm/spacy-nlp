@@ -91,6 +91,9 @@ import scispacy
     For disease and chemical NER. Details for additional models
     available [here](https://allenai.github.io/scispacy/).
 
+> Another option is to use the generic scispacy “mention detector”, and
+> then link to UMLS, eg.
+
 -   An abbreviation detector.
 
 -   An entity linker – here `umls`, but `mesh`, `rxnorm`, `go`, and
@@ -102,12 +105,20 @@ import scispacy
 nlp = spacy.load("en_ner_bc5cdr_md")
 nlp.add_pipe("sentencizer", before = 'ner')
 from scispacy.abbreviation import AbbreviationDetector
-nlp.add_pipe("abbreviation_detector") # before="parser"
+nlp.add_pipe("abbreviation_detector")
+
 from scispacy.linking import EntityLinker
-nlp.add_pipe("scispacy_linker", config={"resolve_abbreviations": True, "linker_name": "umls"})
-from scispacy.hyponym_detector import HyponymDetector
-nlp.add_pipe("hyponym_detector", last=True, config={"extended": False})
+nlp.add_pipe(
+  "scispacy_linker", 
+  config={"resolve_abbreviations": True, 
+  "linker_name": "umls"})
 linker = nlp.get_pipe("scispacy_linker")
+
+from scispacy.hyponym_detector import HyponymDetector
+nlp.add_pipe(
+  "hyponym_detector", 
+  last = True, 
+  config={"extended": False})
 ```
 
 ``` python
@@ -292,16 +303,16 @@ reticulate::py$sp_abbrevs |>
 
 | doc_id | abrv  | start | end | long_form            |
 |-------:|:------|------:|----:|:---------------------|
+|      0 | LPO   |    20 |  21 | Lactoperoxidase      |
 |      0 | LPO   |   105 | 106 | Lactoperoxidase      |
 |      0 | LPO   |    50 |  51 | Lactoperoxidase      |
-|      0 | LPO   |     2 |   3 | Lactoperoxidase      |
 |      0 | LPO   |    90 |  91 | Lactoperoxidase      |
 |      0 | LPO   |   223 | 224 | Lactoperoxidase      |
-|      0 | LPO   |    20 |  21 | Lactoperoxidase      |
-|      2 | PLpro |    51 |  52 | Papain like Protease |
-|      2 | PLpro |   252 | 253 | Papain like Protease |
-|      2 | PLpro |   181 | 182 | Papain like Protease |
+|      0 | LPO   |     2 |   3 | Lactoperoxidase      |
 |      2 | PLpro |   101 | 102 | Papain like Protease |
+|      2 | PLpro |   151 | 152 | Papain like Protease |
+|      2 | PLpro |    51 |  52 | Papain like Protease |
+|      2 | PLpro |   296 | 297 | Papain like Protease |
 
 ### spacy_get_nps
 

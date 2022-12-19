@@ -142,6 +142,8 @@ import scispacy
 
 * `en_ner_bc5cdr_md`, A spaCy NER model trained on the BC5CDR corpus. For disease and chemical NER. Details for additional models available [here](https://allenai.github.io/scispacy/).
 
+> Another option is to use the generic scispacy "mention detector", and then link to UMLS, eg. 
+
 * An abbreviation detector.
 
 * An entity linker -- here `umls`, but `mesh`, `rxnorm`, `go`, and `hpo` are also available knowledge bases that can be linked to.
@@ -152,12 +154,20 @@ import scispacy
 nlp = spacy.load("en_ner_bc5cdr_md")
 nlp.add_pipe("sentencizer", before = 'ner')
 from scispacy.abbreviation import AbbreviationDetector
-nlp.add_pipe("abbreviation_detector") # before="parser"
+nlp.add_pipe("abbreviation_detector")
+
 from scispacy.linking import EntityLinker
-nlp.add_pipe("scispacy_linker", config={"resolve_abbreviations": True, "linker_name": "umls"})
-from scispacy.hyponym_detector import HyponymDetector
-nlp.add_pipe("hyponym_detector", last=True, config={"extended": False})
+nlp.add_pipe(
+  "scispacy_linker", 
+  config={"resolve_abbreviations": True, 
+  "linker_name": "umls"})
 linker = nlp.get_pipe("scispacy_linker")
+
+from scispacy.hyponym_detector import HyponymDetector
+nlp.add_pipe(
+  "hyponym_detector", 
+  last = True, 
+  config={"extended": False})
 ```
 
 
