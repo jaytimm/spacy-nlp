@@ -5,7 +5,7 @@ output:
 ---
 
 
-# Some spacy workflows
+# Some spaCy & scispacy workflows
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -15,6 +15,8 @@ source("/home/jtimm/pCloudDrive/GitHub/packages/render_toc.R")
 
 
 `r paste0('*Updated: ', Sys.Date(),'*')` 
+
+> An attempt at organizing some `spaCy` workflows -- by a lowly R programmer.  Some functions for disentangling `spaCy` output.  Designed for working with actual corpora, as opposed to the `This is a sentence.`-based tutorial type which is ubiquitous in the python/spacy online literature. Indeed a work in progress.     
 
 
 ```{r eval=FALSE, include=FALSE}
@@ -202,9 +204,9 @@ doc = list(nlp.pipe(texts))
 
 
 
-## Extraction procedures
+## Extraction functions
 
-### Annotation df
+### `spacy_get_df`
 
 ```{python}
 def extract_df(doc:spacy.tokens.doc.Doc):
@@ -268,7 +270,7 @@ reticulate::py$sp_df |>
 
 
 
-### Entities df
+### `spacy_get_entities`
 
 ```{python}
 def spacy_get_entities(docs):
@@ -324,7 +326,7 @@ reticulate::py$sp_entities |>
 
 
 
-### Abbreviations df
+### `spacy_get_abbrevs`
 
 ```{python}
 def spacy_get_abbrevs(docs):
@@ -361,7 +363,7 @@ reticulate::py$sp_abbrevs |>
 
 
 
-### Noun phrases df
+### `spacy_get_nps`
 
 ```{python}
 def spacy_get_nps(docs):
@@ -397,7 +399,7 @@ reticulate::py$sp_noun_phrases |>
 ```
 
 
-### Hyponyms df
+### `spacy_get_hyponyms`
 
 ```{python}
 def spacy_get_hyponyms(docs):

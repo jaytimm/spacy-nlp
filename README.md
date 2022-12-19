@@ -1,8 +1,14 @@
-# Some spacy workflows
+# Some spaCy & scispacy workflows
 
 *Updated: 2022-12-19*
 
--   [Some spacy workflows](#some-spacy-workflows)
+> An attempt at organizing some `spaCy` workflows – by a lowly R
+> programmer. Some functions for disentangling `spaCy` output. Designed
+> for working with actual corpora, as opposed to the
+> `This is a sentence.`-based tutorial type which is ubiquitous in the
+> python/spacy online literature. Indeed a work in progress.
+
+-   [Some spaCy & scispacy workflows](#some-spacy-&-scispacy-workflows)
     -   [Conda environment](#conda-environment)
     -   [PubMed abstracts](#pubmed-abstracts)
     -   [Libraries](#libraries)
@@ -10,12 +16,12 @@
         -   [Custom sentencizer via `pySBD` &
             `medspacy`](#custom-sentencizer-via-%60pysbd%60-&-%60medspacy%60)
     -   [Spacy annotate](#spacy-annotate)
-    -   [Extraction procedures](#extraction-procedures)
-        -   [Annotation df](#annotation-df)
-        -   [Entities df](#entities-df)
-        -   [Abbreviations df](#abbreviations-df)
-        -   [Noun phrases df](#noun-phrases-df)
-        -   [Hyponyms df](#hyponyms-df)
+    -   [Extraction functions](#extraction-functions)
+        -   \[spacy_get_df`](#spacy_get_df`)
+        -   \[spacy_get_entities`](#spacy_get_entities`)
+        -   \[spacy_get_abbrevs`](#spacy_get_abbrevs`)
+        -   \[spacy_get_nps`](#spacy_get_nps`)
+        -   \[spacy_get_hyponyms`](#spacy_get_hyponyms`)
 
 ## Conda environment
 
@@ -118,9 +124,9 @@ texts = list(r.df['abstract'])
 doc = list(nlp.pipe(texts))
 ```
 
-## Extraction procedures
+## Extraction functions
 
-### Annotation df
+### `spacy_get_df`
 
 ``` python
 def extract_df(doc:spacy.tokens.doc.Doc):
@@ -188,7 +194,7 @@ reticulate::py$sp_df |>
 |      0 | )               |           3 |       0 | )               |          | -RRB- | punct | PUNCT | FALSE   | FALSE    | FALSE    | TRUE     |
 |      0 | is              |           4 |       0 | be              |          | VBZ   | cop   | VERB  | TRUE    | TRUE     | FALSE    | FALSE    |
 
-### Entities df
+### `spacy_get_entities`
 
 ``` python
 def spacy_get_entities(docs):
@@ -249,7 +255,7 @@ reticulate::py$sp_entities |>
 |      0 |       6 | S. aureus     | DISEASE   | C0038172 | Staphylococcus aureus    | 1     |       167 |     169 |
 |      0 |       7 | nanoparticles | CHEMICAL  | C1450054 | Artificial nanoparticles | 1     |       176 |     177 |
 
-### Abbreviations df
+### `spacy_get_abbrevs`
 
 ``` python
 def spacy_get_abbrevs(docs):
@@ -285,18 +291,18 @@ reticulate::py$sp_abbrevs |>
 
 | doc_id | abrv  | start | end | long_form            |
 |-------:|:------|------:|----:|:---------------------|
+|      0 | LPO   |     2 |   3 | Lactoperoxidase      |
 |      0 | LPO   |    20 |  21 | Lactoperoxidase      |
 |      0 | LPO   |   105 | 106 | Lactoperoxidase      |
-|      0 | LPO   |    90 |  91 | Lactoperoxidase      |
-|      0 | LPO   |    50 |  51 | Lactoperoxidase      |
 |      0 | LPO   |   223 | 224 | Lactoperoxidase      |
-|      0 | LPO   |     2 |   3 | Lactoperoxidase      |
-|      2 | PLpro |   296 | 297 | Papain like Protease |
-|      2 | PLpro |   101 | 102 | Papain like Protease |
+|      0 | LPO   |    50 |  51 | Lactoperoxidase      |
+|      0 | LPO   |    90 |  91 | Lactoperoxidase      |
 |      2 | PLpro |   252 | 253 | Papain like Protease |
 |      2 | PLpro |    51 |  52 | Papain like Protease |
+|      2 | PLpro |   151 | 152 | Papain like Protease |
+|      2 | PLpro |   338 | 339 | Papain like Protease |
 
-### Noun phrases df
+### `spacy_get_nps`
 
 ``` python
 def spacy_get_nps(docs):
@@ -338,7 +344,7 @@ reticulate::py$sp_noun_phrases |>
 |      0 |       1 | biocidal actions                    |    32 |  34 |
 |      0 |       2 | The wide spectrum biocidal activity |    44 |  49 |
 
-### Hyponyms df
+### `spacy_get_hyponyms`
 
 ``` python
 def spacy_get_hyponyms(docs):
