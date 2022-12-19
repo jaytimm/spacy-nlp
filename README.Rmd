@@ -87,9 +87,38 @@ df <- reticulate::r_to_py(dd.df)
 ```
 
 
+
+```{python include=FALSE}
+import pandas as pd
+import os
+import spacy
+import scispacy
+#nlp = spacy.load("en_core_sci_sm")
+#nlp = spacy.load("en_core_web_sm")
+
+nlp = spacy.load("en_ner_bc5cdr_md")
+
+nlp.add_pipe("sentencizer", before = 'ner')
+
+from scispacy.abbreviation import AbbreviationDetector
+nlp.add_pipe("abbreviation_detector") # before="parser"
+
+from scispacy.linking import EntityLinker
+nlp.add_pipe("scispacy_linker", config={"resolve_abbreviations": True, "linker_name": "umls"})
+
+from scispacy.hyponym_detector import HyponymDetector
+nlp.add_pipe("hyponym_detector", last=True, config={"extended": False})
+
+linker = nlp.get_pipe("scispacy_linker")
+
+texts = list(r.df['abstract'])
+doc = list(nlp.pipe(texts))
+```
+
+
 ## Libraries
 
-```{python}
+```{python eval=FALSE}
 import pandas as pd
 import os
 import spacy
@@ -110,7 +139,7 @@ import scispacy
 
 * A homonym detector.
 
-```{python}
+```{python eval=FALSE}
 nlp = spacy.load("en_ner_bc5cdr_md")
 
 nlp.add_pipe("sentencizer", before = 'ner')
@@ -125,7 +154,10 @@ from scispacy.hyponym_detector import HyponymDetector
 nlp.add_pipe("hyponym_detector", last=True, config={"extended": False})
 
 linker = nlp.get_pipe("scispacy_linker")
+```
 
+
+```{python}
 print(nlp.pipe_names)
 ```
 
@@ -163,7 +195,7 @@ class PySBDSenteceSplsitter:
 
 ## Spacy annotate
 
-```{python}
+```{python eval=FALSE}
 texts = list(r.df['abstract'])
 doc = list(nlp.pipe(texts))
 ```
@@ -241,29 +273,41 @@ reticulate::py$sp_df |>
 ```{python}
 def spacy_get_entities(docs):
 
-    entity_details_dict = {"doc_id": [], "ent_text": [], "ent_label": [], "cui": [], "descriptor": [], "score": [], "ent_start": [], "ent_end": []}
+    entity_details_dict = {
+      "doc_id": [], 
+      "sent_id": [], 
+      "ent_text": [],
+      "ent_label": [], 
+      "cui": [], 
+      "descriptor": [], 
+      "score": [], 
+      "ent_start": [], 
+      "ent_end": []
+      }
     
     for ix, doc in enumerate(docs):
+      for sent_i, sent in enumerate(doc.sents):
 
-      for ent in doc.ents:
-        entity_details_dict["doc_id"].append(ix)
-        entity_details_dict["ent_text"].append(ent.text)
-        entity_details_dict["ent_label"].append(ent.label_)
-        
-        if len(ent._.kb_ents) == 0:
-          entity_details_dict["cui"].append('')
-          entity_details_dict["descriptor"].append('')
-          entity_details_dict["score"].append('')
-        else:
-          score = round(ent._.kb_ents[0][1], 2)
-          cui = ent._.kb_ents[0][0]
-          descriptor = linker.umls.cui_to_entity[ent._.kb_ents[0][0]][1]
-          entity_details_dict["cui"].append(cui)
-          entity_details_dict["descriptor"].append(descriptor)
-          entity_details_dict["score"].append(score)
+        for ent in sent.ents:
+          entity_details_dict["doc_id"].append(ix)
+          entity_details_dict["sent_id"].append(sent_i)
+          entity_details_dict["ent_text"].append(ent.text)
+          entity_details_dict["ent_label"].append(ent.label_)
           
-        entity_details_dict["ent_start"].append(ent.start)
-        entity_details_dict["ent_end"].append(ent.end)
+          if len(ent._.kb_ents) == 0:
+            entity_details_dict["cui"].append('')
+            entity_details_dict["descriptor"].append('')
+            entity_details_dict["score"].append('')
+          else:
+            score = round(ent._.kb_ents[0][1], 2)
+            cui = ent._.kb_ents[0][0]
+            descriptor = linker.umls.cui_to_entity[ent._.kb_ents[0][0]][1]
+            entity_details_dict["cui"].append(cui)
+            entity_details_dict["descriptor"].append(descriptor)
+            entity_details_dict["score"].append(score)
+            
+          entity_details_dict["ent_start"].append(ent.start)
+          entity_details_dict["ent_end"].append(ent.end)
           
     dd = pd.DataFrame.from_dict(entity_details_dict)
         
@@ -285,7 +329,13 @@ reticulate::py$sp_entities |>
 ```{python}
 def spacy_get_abbrevs(docs):
 
-    details_dict = {"doc_id": [], "abrv": [], "start": [], "end": [], "long_form": []}
+    details_dict = {
+      "doc_id": [], 
+      "abrv": [], 
+      "start": [], 
+      "end": [], 
+      "long_form": []
+      }
     
     for ix, doc in enumerate(docs):
       
@@ -316,7 +366,13 @@ reticulate::py$sp_abbrevs |>
 ```{python}
 def spacy_get_nps(docs):
 
-    details_dict = {"doc_id": [], "sent_id": [],"nounc": [], "start": [], "end": []}
+    details_dict = {
+      "doc_id": [], 
+      "sent_id": [],
+      "nounc": [], 
+      "start": [], 
+      "end": []
+      }
     
     for ix, doc in enumerate(docs):
       for sent_i, sent in enumerate(doc.sents):
@@ -346,7 +402,12 @@ reticulate::py$sp_noun_phrases |>
 ```{python}
 def spacy_get_hyponyms(docs):
 
-    details_dict = {"doc_id": [], "pred": [], "sbj": [], "obj": []}
+    details_dict = {
+      "doc_id": [], 
+      "pred": [], 
+      "sbj": [], 
+      "obj": []
+      }
     
     for ix, doc in enumerate(docs):
       

@@ -88,48 +88,22 @@ import scispacy
 
 ``` python
 nlp = spacy.load("en_ner_bc5cdr_md")
-```
 
-    ## /home/jtimm/anaconda3/envs/scispacy/lib/python3.9/site-packages/spacy/util.py:877: UserWarning: [W095] Model 'en_ner_bc5cdr_md' (0.4.0) was trained with spaCy v3.0 and may not be 100% compatible with the current version (3.4.4). If you see errors or degraded performance, download a newer compatible model or retrain your custom model with the current spaCy version. For more details and available updates, run: python -m spacy validate
-    ##   warnings.warn(warn_msg)
-
-``` python
 nlp.add_pipe("sentencizer", before = 'ner')
-```
 
-    ## <spacy.pipeline.sentencizer.Sentencizer object at 0x7f3c31822140>
-
-``` python
 from scispacy.abbreviation import AbbreviationDetector
 nlp.add_pipe("abbreviation_detector") # before="parser"
-```
 
-    ## <scispacy.abbreviation.AbbreviationDetector object at 0x7f3c31863d90>
-
-``` python
 from scispacy.linking import EntityLinker
 nlp.add_pipe("scispacy_linker", config={"resolve_abbreviations": True, "linker_name": "umls"})
-```
 
-    ## <scispacy.linking.EntityLinker object at 0x7f3c193326d0>
-    ## 
-    ## /home/jtimm/anaconda3/envs/scispacy/lib/python3.9/site-packages/sklearn/base.py:288: UserWarning: Trying to unpickle estimator TfidfTransformer from version 0.20.3 when using version 1.2.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
-    ## https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
-    ##   warnings.warn(
-    ## /home/jtimm/anaconda3/envs/scispacy/lib/python3.9/site-packages/sklearn/base.py:288: UserWarning: Trying to unpickle estimator TfidfVectorizer from version 0.20.3 when using version 1.2.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
-    ## https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
-    ##   warnings.warn(
-
-``` python
 from scispacy.hyponym_detector import HyponymDetector
 nlp.add_pipe("hyponym_detector", last=True, config={"extended": False})
+
+linker = nlp.get_pipe("scispacy_linker")
 ```
 
-    ## <scispacy.hyponym_detector.HyponymDetector object at 0x7f3bb1baa400>
-
 ``` python
-linker = nlp.get_pipe("scispacy_linker")
-
 print(nlp.pipe_names)
 ```
 
@@ -143,9 +117,6 @@ print(nlp.pipe_names)
 texts = list(r.df['abstract'])
 doc = list(nlp.pipe(texts))
 ```
-
-    ## /home/jtimm/anaconda3/envs/scispacy/lib/python3.9/site-packages/scispacy/abbreviation.py:230: UserWarning: [W036] The component 'matcher' does not have any patterns defined.
-    ##   global_matches = self.global_matcher(doc)
 
 ## Extraction procedures
 
@@ -222,29 +193,41 @@ reticulate::py$sp_df |>
 ``` python
 def spacy_get_entities(docs):
 
-    entity_details_dict = {"doc_id": [], "ent_text": [], "ent_label": [], "cui": [], "descriptor": [], "score": [], "ent_start": [], "ent_end": []}
+    entity_details_dict = {
+      "doc_id": [], 
+      "sent_id": [], 
+      "ent_text": [],
+      "ent_label": [], 
+      "cui": [], 
+      "descriptor": [], 
+      "score": [], 
+      "ent_start": [], 
+      "ent_end": []
+      }
     
     for ix, doc in enumerate(docs):
+      for sent_i, sent in enumerate(doc.sents):
 
-      for ent in doc.ents:
-        entity_details_dict["doc_id"].append(ix)
-        entity_details_dict["ent_text"].append(ent.text)
-        entity_details_dict["ent_label"].append(ent.label_)
-        
-        if len(ent._.kb_ents) == 0:
-          entity_details_dict["cui"].append('')
-          entity_details_dict["descriptor"].append('')
-          entity_details_dict["score"].append('')
-        else:
-          score = round(ent._.kb_ents[0][1], 2)
-          cui = ent._.kb_ents[0][0]
-          descriptor = linker.umls.cui_to_entity[ent._.kb_ents[0][0]][1]
-          entity_details_dict["cui"].append(cui)
-          entity_details_dict["descriptor"].append(descriptor)
-          entity_details_dict["score"].append(score)
+        for ent in sent.ents:
+          entity_details_dict["doc_id"].append(ix)
+          entity_details_dict["sent_id"].append(sent_i)
+          entity_details_dict["ent_text"].append(ent.text)
+          entity_details_dict["ent_label"].append(ent.label_)
           
-        entity_details_dict["ent_start"].append(ent.start)
-        entity_details_dict["ent_end"].append(ent.end)
+          if len(ent._.kb_ents) == 0:
+            entity_details_dict["cui"].append('')
+            entity_details_dict["descriptor"].append('')
+            entity_details_dict["score"].append('')
+          else:
+            score = round(ent._.kb_ents[0][1], 2)
+            cui = ent._.kb_ents[0][0]
+            descriptor = linker.umls.cui_to_entity[ent._.kb_ents[0][0]][1]
+            entity_details_dict["cui"].append(cui)
+            entity_details_dict["descriptor"].append(descriptor)
+            entity_details_dict["score"].append(score)
+            
+          entity_details_dict["ent_start"].append(ent.start)
+          entity_details_dict["ent_end"].append(ent.end)
           
     dd = pd.DataFrame.from_dict(entity_details_dict)
         
@@ -258,20 +241,26 @@ reticulate::py$sp_entities |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | ent_text      | ent_label | cui      | descriptor               | score | ent_start | ent_end |
-|-----:|:----------|:--------|:-------|:------------------|:-----|--------:|------:|
-|      0 | nanoparticles | CHEMICAL  | C1450054 | Artificial nanoparticles | 1     |       130 |     131 |
-|      0 | °             | CHEMICAL  |          |                          |       |       148 |     149 |
-|      0 | P. aeruginosa | DISEASE   | C0033809 | Pseudomonas aeruginosa   | 1     |       164 |     166 |
-|      0 | S. aureus     | DISEASE   | C0038172 | Staphylococcus aureus    | 1     |       167 |     169 |
-|      0 | nanoparticles | CHEMICAL  | C1450054 | Artificial nanoparticles | 1     |       176 |     177 |
+| doc_id | sent_id | ent_text      | ent_label | cui      | descriptor               | score | ent_start | ent_end |
+|-----:|------:|:---------|:-------|:------|:----------------|:----|-------:|------:|
+|      0 |       5 | nanoparticles | CHEMICAL  | C1450054 | Artificial nanoparticles | 1     |       130 |     131 |
+|      0 |       5 | °             | CHEMICAL  |          |                          |       |       148 |     149 |
+|      0 |       6 | P. aeruginosa | DISEASE   | C0033809 | Pseudomonas aeruginosa   | 1     |       164 |     166 |
+|      0 |       6 | S. aureus     | DISEASE   | C0038172 | Staphylococcus aureus    | 1     |       167 |     169 |
+|      0 |       7 | nanoparticles | CHEMICAL  | C1450054 | Artificial nanoparticles | 1     |       176 |     177 |
 
 ### Abbreviations df
 
 ``` python
 def spacy_get_abbrevs(docs):
 
-    details_dict = {"doc_id": [], "abrv": [], "start": [], "end": [], "long_form": []}
+    details_dict = {
+      "doc_id": [], 
+      "abrv": [], 
+      "start": [], 
+      "end": [], 
+      "long_form": []
+      }
     
     for ix, doc in enumerate(docs):
       
@@ -297,22 +286,28 @@ reticulate::py$sp_abbrevs |>
 | doc_id | abrv  | start | end | long_form            |
 |-------:|:------|------:|----:|:---------------------|
 |      0 | LPO   |    20 |  21 | Lactoperoxidase      |
+|      0 | LPO   |   105 | 106 | Lactoperoxidase      |
 |      0 | LPO   |    90 |  91 | Lactoperoxidase      |
 |      0 | LPO   |    50 |  51 | Lactoperoxidase      |
 |      0 | LPO   |   223 | 224 | Lactoperoxidase      |
 |      0 | LPO   |     2 |   3 | Lactoperoxidase      |
-|      0 | LPO   |   105 | 106 | Lactoperoxidase      |
-|      2 | PLpro |    51 |  52 | Papain like Protease |
 |      2 | PLpro |   296 | 297 | Papain like Protease |
+|      2 | PLpro |   101 | 102 | Papain like Protease |
 |      2 | PLpro |   252 | 253 | Papain like Protease |
-|      2 | PLpro |   338 | 339 | Papain like Protease |
+|      2 | PLpro |    51 |  52 | Papain like Protease |
 
 ### Noun phrases df
 
 ``` python
 def spacy_get_nps(docs):
 
-    details_dict = {"doc_id": [], "sent_id": [],"nounc": [], "start": [], "end": []}
+    details_dict = {
+      "doc_id": [], 
+      "sent_id": [],
+      "nounc": [], 
+      "start": [], 
+      "end": []
+      }
     
     for ix, doc in enumerate(docs):
       for sent_i, sent in enumerate(doc.sents):
@@ -348,7 +343,12 @@ reticulate::py$sp_noun_phrases |>
 ``` python
 def spacy_get_hyponyms(docs):
 
-    details_dict = {"doc_id": [], "pred": [], "sbj": [], "obj": []}
+    details_dict = {
+      "doc_id": [], 
+      "pred": [], 
+      "sbj": [], 
+      "obj": []
+      }
     
     for ix, doc in enumerate(docs):
       
