@@ -1,0 +1,181 @@
+---
+title: "Untitled"
+output: html_document
+date: "2022-12-11"
+---
+
+
+```{bash}
+conda create -n scispacy python=3.9
+source activate scispacy
+/home/jtimm/anaconda3/envs/scispacy/bin/pip install scispacy
+
+/home/jtimm/anaconda3/envs/scispacy_demo/bin/pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
+## python -m spacy download en_core_web_sm
+
+/home/jtimm/anaconda3/envs/scispacy_demo/bin/pip install dframcy
+
+conda install numpy pandas transformers
+```
+
+
+```{bash}
+<!-- git clone https://github.com/dmis-lab/biobert.git -->
+<!-- cd biobert; pip install -r requirements.txt -->
+```
+
+
+```{r}
+## <R-console>
+Sys.setenv(RETICULATE_PYTHON = "/home/jtimm/anaconda3/envs/scispacy_demo/bin/python")
+library(reticulate)
+#reticulate::use_python("/home/jtimm/anaconda3/envs/m3demo/bin/python")
+reticulate::use_condaenv(condaenv = "scispacy_demo",
+                         conda = "/home/jtimm/anaconda3/bin/conda")
+```
+
+
+```{python}
+import spacy
+nlp = spacy.load("en_core_sci_sm")
+doc = nlp("Alterations in the hypocretin receptor 2 and preprohypocretin genes produce narcolepsy in some animals.")
+```
+
+
+```{python}
+import spacy
+
+from scispacy.abbreviation import AbbreviationDetector
+
+nlp = spacy.load("en_core_sci_sm")
+
+# Add the abbreviation pipe to the spacy pipeline.
+nlp.add_pipe("abbreviation_detector")
+
+doc = nlp("Spinal and bulbar muscular atrophy (SBMA) is an \
+           inherited motor neuron disease caused by the expansion \
+           of a polyglutamine tract within the androgen receptor (AR). \
+           SBMA can be caused by this easily.")
+
+annotation_dataframe = dframcy.to_dataframe(doc)
+
+
+def get_abbrevs(doc):
+
+    details_dict = {"abrv": [], "start": [], "end": [], "long_form": []}
+    for ab in doc._.abbreviations:
+        details_dict["abrv"].append(ab.text)
+        details_dict["start"].append(ab.start)
+        details_dict["end"].append(ab.end)
+        ## doc._.abbreviations[1]._.long_form
+        details_dict["long_form"].append(ab._.long_form)
+    return details_dict
+  
+g99 = get_abbrevs(doc)
+pd.DataFrame.from_dict(g99)
+```
+
+
+sentences==
+
+```{python}
+from spacy.lang.en import English 
+
+nlp = English()
+nlp.add_pipe('sentencizer')
+
+def split_in_sentences(text):
+    doc = nlp(text)
+    return [str(sent).strip() for sent in doc.sents]
+  
+split_in_sentences(doc)
+```
+
+Well, it was an embarrassingly simple solution, but hopefully it might be interesting to others. Simply use .ent_iob_ and .ent_type_ attributes of tokens. Namely:
+
+pd.DataFrame([(e.text, e.ent_iob_, e.ent_type_) for e in doc])
+
+
+
+
+```{python}
+
+import pandas as pd
+
+def get_named_entity_dict(doc):
+
+    entity_details_dict = {"ent_text": [], "ent_start": [], "ent_end": []}
+    for ent in doc.ents:
+        entity_details_dict["ent_text"].append(ent.text)
+        #entity_details_dict["ent_label"].append(ent.label_)
+        entity_details_dict["ent_start"].append(ent.start)
+        entity_details_dict["ent_end"].append(ent.end)
+    return entity_details_dict
+  
+g99 = get_named_entity_dict(doc)
+pd.DataFrame.from_dict(g99)
+```
+
+
+
+
+
+
+
+
+```{python}
+import spacy
+import scispacy
+
+from scispacy.linking import EntityLinker
+
+nlp = spacy.load("en_core_sci_sm")
+
+# This line takes a while, because we have to download ~1GB of data
+# and load a large JSON file (the knowledge base). Be patient!
+# Thankfully it should be faster after the first time you use it, because
+# the downloads are cached.
+# NOTE: The resolve_abbreviations parameter is optional, and requires that
+# the AbbreviationDetector pipe has already been added to the pipeline. Adding
+# the AbbreviationDetector pipe and setting resolve_abbreviations to True means
+# that linking will only be performed on the long form of abbreviations.
+nlp.add_pipe("scispacy_linker", config={"resolve_abbreviations": True, "linker_name": "umls"})
+
+doc = nlp("Spinal and bulbar muscular atrophy (SBMA) is an \
+           inherited motor neuron disease caused by the expansion \
+           of a polyglutamine tract within the androgen receptor (AR). \
+           SBMA can be caused by this easily.")
+
+# Let's look at a random entity!
+entity = doc.ents[1]
+
+print("Name: ", entity)
+
+# Each entity is linked to UMLS with a score
+# (currently just char-3gram matching).
+linker = nlp.get_pipe("scispacy_linker")
+
+## not working -- 
+for umls_ent in entity._.kb_ents:
+	print(linker.kb.cui_to_entity[umls_ent[0]])
+```
+
+
+
+```{python}
+import spacy
+from scispacy.hyponym_detector import HyponymDetector
+
+nlp = spacy.load("en_core_sci_sm")
+nlp.add_pipe("hyponym_detector", last=True, config={"extended": False})
+
+doc = nlp("Keystone plant species such as fig trees are good for the soil.")
+
+print(doc._.hearst_patterns)
+```
+
+
+
+
+
+
