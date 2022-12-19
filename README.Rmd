@@ -19,6 +19,9 @@ source("/home/jtimm/pCloudDrive/GitHub/packages/render_toc.R")
 > An attempt at organizing some `spaCy` workflows -- by a lowly R programmer.  Some functions for disentangling `spaCy` output.  Designed for working with actual corpora, as opposed to the `This is a sentence.`-based tutorial type which is ubiquitous in the python/spacy online literature. Indeed a work in progress.     
 
 
+---
+
+
 ```{r eval=FALSE, include=FALSE}
 # https://explosion.ai/blog/healthsea
 # incredible -- 
@@ -206,7 +209,7 @@ doc = list(nlp.pipe(texts))
 
 ## Extraction functions
 
-### `spacy_get_df`
+### spacy_get_df
 
 ```{python}
 def extract_df(doc:spacy.tokens.doc.Doc):
@@ -270,7 +273,7 @@ reticulate::py$sp_df |>
 
 
 
-### `spacy_get_entities`
+### spacy_get_entities
 
 ```{python}
 def spacy_get_entities(docs):
@@ -326,7 +329,7 @@ reticulate::py$sp_entities |>
 
 
 
-### `spacy_get_abbrevs`
+### spacy_get_abbrevs
 
 ```{python}
 def spacy_get_abbrevs(docs):
@@ -363,7 +366,7 @@ reticulate::py$sp_abbrevs |>
 
 
 
-### `spacy_get_nps`
+### spacy_get_nps
 
 ```{python}
 def spacy_get_nps(docs):
@@ -399,7 +402,7 @@ reticulate::py$sp_noun_phrases |>
 ```
 
 
-### `spacy_get_hyponyms`
+### spacy_get_hyponyms
 
 ```{python}
 def spacy_get_hyponyms(docs):
@@ -437,5 +440,7 @@ reticulate::py$sp_hearst |>
 ```
 
 
+
+## Medical transcript data
 
 
