@@ -129,6 +129,30 @@ print(nlp.pipe_names)
 
 ### Custom sentencizer via `pySBD` & `medspacy`
 
+``` python
+# Doc.set_extension("pysbd_sentences", getter = pysbd_sentence_boundaries, force=True)
+# nlp.add_pipe('pysbd_sentences', before = 'ner')
+
+## https://github.com/medspacy/medspacy/blob/master/medspacy/sentence_splitting.py
+import pysbd
+from PyRuSH import PyRuSHSentencizer
+from spacy.language import Language
+
+@Language.factory("medspacy_pysbd")
+class PySBDSenteceSplsitter:
+    def __init__(self, name, nlp, clean=False):
+        self.name = name
+        self.nlp = nlp
+        self.seg = pysbd.Segmenter(language="en", clean=clean, char_span=True)
+
+    def __call__(self, doc):
+        sents_char_spans = self.seg.segment(doc.text_with_ws)
+        start_token_ids = [sent.start for sent in sents_char_spans]
+        for token in doc:
+            token.is_sent_start = True if token.idx in start_token_ids else False
+        return doc
+```
+
 ## Spacy annotate
 
 ``` python
@@ -303,16 +327,16 @@ reticulate::py$sp_abbrevs |>
 
 | doc_id | abrv  | start | end | long_form            |
 |-------:|:------|------:|----:|:---------------------|
-|      0 | LPO   |    20 |  21 | Lactoperoxidase      |
 |      0 | LPO   |   105 | 106 | Lactoperoxidase      |
-|      0 | LPO   |    50 |  51 | Lactoperoxidase      |
+|      0 | LPO   |    20 |  21 | Lactoperoxidase      |
 |      0 | LPO   |    90 |  91 | Lactoperoxidase      |
 |      0 | LPO   |   223 | 224 | Lactoperoxidase      |
 |      0 | LPO   |     2 |   3 | Lactoperoxidase      |
-|      2 | PLpro |   101 | 102 | Papain like Protease |
+|      0 | LPO   |    50 |  51 | Lactoperoxidase      |
+|      2 | PLpro |   181 | 182 | Papain like Protease |
+|      2 | PLpro |   252 | 253 | Papain like Protease |
 |      2 | PLpro |   151 | 152 | Papain like Protease |
-|      2 | PLpro |    51 |  52 | Papain like Protease |
-|      2 | PLpro |   296 | 297 | Papain like Protease |
+|      2 | PLpro |   338 | 339 | Papain like Protease |
 
 ### spacy_get_nps
 

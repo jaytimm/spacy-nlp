@@ -180,7 +180,7 @@ print(nlp.pipe_names)
 
 ### Custom sentencizer via `pySBD` & `medspacy`
 
-```{python eval=FALSE, include=FALSE}
+```{python eval=FALSE}
 # Doc.set_extension("pysbd_sentences", getter = pysbd_sentence_boundaries, force=True)
 # nlp.add_pipe('pysbd_sentences', before = 'ner')
 
@@ -188,7 +188,6 @@ print(nlp.pipe_names)
 import pysbd
 from PyRuSH import PyRuSHSentencizer
 from spacy.language import Language
-
 
 @Language.factory("medspacy_pysbd")
 class PySBDSenteceSplsitter:
