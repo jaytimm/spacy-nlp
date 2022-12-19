@@ -1,5 +1,22 @@
 # Some spacy workflows
 
+*Updated: 2022-12-19*
+
+-   [Some spacy workflows](#some-spacy-workflows)
+    -   [Conda environment](#conda-environment)
+    -   [PubMed abstracts](#pubmed-abstracts)
+    -   [Libraries](#libraries)
+        -   [Scispacy components](#scispacy-components)
+        -   [Custom sentencizer via `pySBD` &
+            `medspacy`](#custom-sentencizer-via-%60pysbd%60-&-%60medspacy%60)
+    -   [Spacy annotate](#spacy-annotate)
+    -   [Extraction procedures](#extraction-procedures)
+        -   [Annotation df](#annotation-df)
+        -   [Entities df](#entities-df)
+        -   [Abbreviations df](#abbreviations-df)
+        -   [Noun phrases df](#noun-phrases-df)
+        -   [Hyponyms df](#hyponyms-df)
+
 ## Conda environment
 
 ``` bash
@@ -80,21 +97,21 @@ nlp = spacy.load("en_ner_bc5cdr_md")
 nlp.add_pipe("sentencizer", before = 'ner')
 ```
 
-    ## <spacy.pipeline.sentencizer.Sentencizer object at 0x7faf4ed96ac0>
+    ## <spacy.pipeline.sentencizer.Sentencizer object at 0x7f3c31822140>
 
 ``` python
 from scispacy.abbreviation import AbbreviationDetector
 nlp.add_pipe("abbreviation_detector") # before="parser"
 ```
 
-    ## <scispacy.abbreviation.AbbreviationDetector object at 0x7faf4ede6f10>
+    ## <scispacy.abbreviation.AbbreviationDetector object at 0x7f3c31863d90>
 
 ``` python
 from scispacy.linking import EntityLinker
 nlp.add_pipe("scispacy_linker", config={"resolve_abbreviations": True, "linker_name": "umls"})
 ```
 
-    ## <scispacy.linking.EntityLinker object at 0x7faf368b4700>
+    ## <scispacy.linking.EntityLinker object at 0x7f3c193326d0>
     ## 
     ## /home/jtimm/anaconda3/envs/scispacy/lib/python3.9/site-packages/sklearn/base.py:288: UserWarning: Trying to unpickle estimator TfidfTransformer from version 0.20.3 when using version 1.2.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
     ## https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
@@ -108,7 +125,7 @@ from scispacy.hyponym_detector import HyponymDetector
 nlp.add_pipe("hyponym_detector", last=True, config={"extended": False})
 ```
 
-    ## <scispacy.hyponym_detector.HyponymDetector object at 0x7faecf5e1430>
+    ## <scispacy.hyponym_detector.HyponymDetector object at 0x7f3bb1baa400>
 
 ``` python
 linker = nlp.get_pipe("scispacy_linker")
@@ -280,15 +297,15 @@ reticulate::py$sp_abbrevs |>
 | doc_id | abrv  | start | end | long_form            |
 |-------:|:------|------:|----:|:---------------------|
 |      0 | LPO   |    20 |  21 | Lactoperoxidase      |
-|      0 | LPO   |   105 | 106 | Lactoperoxidase      |
-|      0 | LPO   |     2 |   3 | Lactoperoxidase      |
-|      0 | LPO   |    50 |  51 | Lactoperoxidase      |
 |      0 | LPO   |    90 |  91 | Lactoperoxidase      |
+|      0 | LPO   |    50 |  51 | Lactoperoxidase      |
 |      0 | LPO   |   223 | 224 | Lactoperoxidase      |
-|      2 | PLpro |   338 | 339 | Papain like Protease |
-|      2 | PLpro |   101 | 102 | Papain like Protease |
+|      0 | LPO   |     2 |   3 | Lactoperoxidase      |
+|      0 | LPO   |   105 | 106 | Lactoperoxidase      |
 |      2 | PLpro |    51 |  52 | Papain like Protease |
 |      2 | PLpro |   296 | 297 | Papain like Protease |
+|      2 | PLpro |   252 | 253 | Papain like Protease |
+|      2 | PLpro |   338 | 339 | Papain like Protease |
 
 ### Noun phrases df
 

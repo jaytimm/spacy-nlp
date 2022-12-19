@@ -35,9 +35,9 @@ source("/home/jtimm/pCloudDrive/GitHub/packages/render_toc.R")
 
 
 ```{r echo=FALSE}
-render_toc(filename = "/home/jtimm/pCloudDrive/GitHub/packages/pubmedr/README.Rmd",
+render_toc(filename = "/home/jtimm/pCloudDrive/GitHub/git-projects/spacy-nlp/README.Rmd",
            toc_depth = 3,
-           base_level = 2)
+           base_level = 1)
 ```
 
 
