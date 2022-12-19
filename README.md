@@ -5,7 +5,8 @@
 > An attempt at organizing some `spaCy` workflows – by a lowly R
 > programmer. Some functions for disentangling `spaCy` output. For
 > working with actual corpora, as opposed to
-> `nlp("This is a sentence.")`.
+> `nlp("This is a sentence.")`. Without the other stupid shit python
+> bloggers do.
 
 ------------------------------------------------------------------------
 
@@ -222,13 +223,13 @@ reticulate::py$sp_df |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | token                       | token_order | sent_id | lemma                       | ent_type | tag   | dep      | pos   | is_stop | is_alpha | is_digit | is_punct |
-|---:|:-----------|-----:|----:|:-----------|:----|:---|:----|:---|:----|:----|:----|:----|
-|      0 | Trifluoromethyl-substituted |           0 |       0 | trifluoromethyl-substituted | CHEMICAL | JJ    | amod     | ADJ   | FALSE   | FALSE    | FALSE    | FALSE    |
-|      0 | cyclopropanes               |           1 |       0 | cyclopropane                | CHEMICAL | NNS   | nsubj    | NOUN  | FALSE   | TRUE     | FALSE    | FALSE    |
-|      0 | (                           |           2 |       0 | (                           | CHEMICAL | -LRB- | punct    | PUNCT | FALSE   | FALSE    | FALSE    | TRUE     |
-|      0 | CF3                         |           3 |       0 | cf3                         | CHEMICAL | NN    | compound | NOUN  | FALSE   | FALSE    | FALSE    | FALSE    |
-|      0 | -CPAs                       |           4 |       0 | -cpas                       | CHEMICAL | CD    | appos    | NUM   | FALSE   | FALSE    | FALSE    | FALSE    |
+| doc_id | token   | token_order | sent_id | lemma   | ent_type | tag   | dep      | pos   | is_stop | is_alpha | is_digit | is_punct |
+|----:|:-----|-------:|-----:|:-----|:-----|:----|:-----|:----|:-----|:-----|:-----|:-----|
+|      0 | Chagas  |           0 |       0 | chagas  | DISEASE  | JJ    | compound | ADJ   | FALSE   | TRUE     | FALSE    | FALSE    |
+|      0 | disease |           1 |       0 | disease | DISEASE  | NN    | nsubj    | NOUN  | FALSE   | TRUE     | FALSE    | FALSE    |
+|      0 | (       |           2 |       0 | (       |          | -LRB- | punct    | PUNCT | FALSE   | FALSE    | FALSE    | TRUE     |
+|      0 | CD      |           3 |       0 | cd      |          | NN    | appos    | NOUN  | FALSE   | TRUE     | FALSE    | FALSE    |
+|      0 | )       |           4 |       0 | )       |          | -RRB- | punct    | PUNCT | FALSE   | FALSE    | FALSE    | TRUE     |
 
 ### spacy_get_entities
 
@@ -283,13 +284,13 @@ reticulate::py$sp_entities |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | sent_id | ent_text                                             | ent_label | cui      | descriptor  | score | ent_start | ent_end |
-|----:|-----:|:---------------------------|:------|:-----|:-------|:----|------:|-----:|
-|      0 |       0 | Trifluoromethyl-substituted cyclopropanes (CF3 -CPAs | CHEMICAL  |          |             |       |         0 |       5 |
-|      0 |       2 | biocatalyst                                          | CHEMICAL  | C0014442 | Enzymes     | 0.83  |        41 |      42 |
-|      2 |       2 | deoxyribose                                          | CHEMICAL  | C0011530 | Deoxyribose | 1     |        39 |      40 |
-|      2 |       2 | phosphate                                            | CHEMICAL  | C0031603 | Phosphates  | 1     |        42 |      43 |
-|      2 |       2 | adenine                                              | CHEMICAL  | C0001407 | adenine     | 1     |        60 |      61 |
+| doc_id | sent_id | ent_text              | ent_label | cui      | descriptor       | score | ent_start | ent_end |
+|-----:|------:|:---------------|:-------|:------|:-----------|:----|-------:|------:|
+|      0 |       0 | Chagas disease        | DISEASE   | C0041234 | Chagas Disease   | 1     |         0 |       2 |
+|      0 |       0 | protozoan Trypanosoma | DISEASE   | C0033739 | Protozoa         | 0.71  |        12 |      14 |
+|      0 |       1 | toxicity              | DISEASE   | C0040539 | Toxicity aspects | 1     |        29 |      30 |
+|      0 |       3 | chloro-oximes         | CHEMICAL  |          |                  |       |        64 |      65 |
+|      0 |       3 | acetylenes            | CHEMICAL  | C0001052 | acetylene        | 1     |        66 |      67 |
 
 ### spacy_get_abbrevs
 
@@ -325,18 +326,18 @@ reticulate::py$sp_abbrevs |>
   slice(1:10) |> knitr::kable()
 ```
 
-| doc_id | abrv  | start | end | long_form                  |
-|-------:|:------|------:|----:|:---------------------------|
-|      4 | PLpro |   101 | 102 | Papain like Protease       |
-|      4 | PLpro |    51 |  52 | Papain like Protease       |
-|      4 | PLpro |   338 | 339 | Papain like Protease       |
-|      4 | PLpro |   296 | 297 | Papain like Protease       |
-|      4 | PLpro |   252 | 253 | Papain like Protease       |
-|      4 | PLpro |   151 | 152 | Papain like Protease       |
-|      4 | PLpro |   181 | 182 | Papain like Protease       |
-|      6 | HMTs  |    94 |  95 | histone methyltransferases |
-|      6 | HMTs  |   114 | 115 | histone methyltransferases |
-|      6 | HMTs  |    12 |  13 | histone methyltransferases |
+| doc_id | abrv  | start | end | long_form                |
+|-------:|:------|------:|----:|:-------------------------|
+|      0 | CD    |     3 |   4 | Chagas disease           |
+|      0 | CD    |   197 | 198 | Chagas disease           |
+|      0 | CD    |   179 | 180 | Chagas disease           |
+|      1 | FEP   |   123 | 124 | free energy perturbation |
+|      1 | FEP   |   111 | 112 | free energy perturbation |
+|      7 | PLpro |   252 | 253 | Papain like Protease     |
+|      7 | PLpro |   338 | 339 | Papain like Protease     |
+|      7 | PLpro |   296 | 297 | Papain like Protease     |
+|      7 | PLpro |   151 | 152 | Papain like Protease     |
+|      7 | PLpro |   181 | 182 | Papain like Protease     |
 
 ### spacy_get_nps
 
@@ -372,13 +373,13 @@ reticulate::py$sp_noun_phrases |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | sent_id | nounc                                     | start | end |
-|-------:|--------:|:------------------------------------------|------:|----:|
-|      0 |       0 | Trifluoromethyl-substituted cyclopropanes |     0 |   2 |
-|      0 |       0 | an important class                        |     7 |  10 |
-|      0 |       1 | several methods                           |    17 |  19 |
-|      0 |       1 | stereoselective production                |    28 |  30 |
-|      0 |       1 | a formidable challenge                    |    34 |  37 |
+| doc_id | sent_id | nounc           | start | end |
+|-------:|--------:|:----------------|------:|----:|
+|      0 |       0 | Chagas disease  |     0 |   2 |
+|      0 |       0 | (CD             |     2 |   4 |
+|      0 |       1 | The two drugs   |    16 |  19 |
+|      0 |       1 | adverse effects |    25 |  27 |
+|      0 |       1 | severe toxicity |    28 |  30 |
 
 ### spacy_get_hyponyms
 
@@ -417,16 +418,16 @@ reticulate::py$sp_hearst |>
 
 | doc_id | pred    | sbj              | obj               |
 |-------:|:--------|:-----------------|:------------------|
-|      2 | such_as | diseases         | cancer            |
-|      3 | include | efficacy effects | lung moisturizing |
-|      3 | include | efficacy effects | dehumidification  |
-|      3 | include | efficacy effects | detoxification    |
-|      4 | such_as | Phytochemicals   | Tinosponone       |
-|      4 | such_as | Phytochemicals   | Rhoifolin         |
-|      4 | such_as | Phytochemicals   | Rosmanol          |
-|      4 | such_as | Phytochemicals   | Berberin          |
-|      4 | such_as | Phytochemicals   | Nimbin            |
-|      4 | such_as | Phytochemicals   | drugs Elbasvir    |
+|      2 | include | metabolites      | pigments          |
+|      2 | include | metabolites      | enzymes           |
+|      2 | include | metabolites      | compounds         |
+|      3 | such_as | microbes         | microfungi        |
+|      3 | such_as | microbes         | bacteria          |
+|      3 | such_as | ailments         | cancer            |
+|      3 | such_as | ailments         | malaria           |
+|      3 | such_as | ailments         | diseases          |
+|      5 | such_as | diseases         | cancer            |
+|      6 | include | efficacy effects | lung moisturizing |
 
 ## Medical transcript data
 
