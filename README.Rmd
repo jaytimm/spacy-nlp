@@ -102,7 +102,7 @@ import scispacy
 
 nlp = spacy.load("en_ner_bc5cdr_md")
 
-nlp.add_pipe("sentencizer", before = 'ner')
+nlp.add_pipe("sentencizer", first=True)
 
 from scispacy.abbreviation import AbbreviationDetector
 nlp.add_pipe("abbreviation_detector") # before="parser"
@@ -147,7 +147,7 @@ import scispacy
 
 ```{python eval=FALSE}
 nlp = spacy.load("en_ner_bc5cdr_md")
-nlp.add_pipe("sentencizer", before = 'ner')
+nlp.add_pipe("sentencizer", first=True)
 from scispacy.abbreviation import AbbreviationDetector
 nlp.add_pipe("abbreviation_detector")
 
@@ -173,34 +173,6 @@ print(nlp.pipe_names)
 
 
 
-### Custom sentencizer via `pySBD` & `medspacy`
-
-```{python eval=FALSE, include=FALSE}
-# Doc.set_extension("pysbd_sentences", getter = pysbd_sentence_boundaries, force=True)
-# nlp.add_pipe('pysbd_sentences', before = 'ner')
-
-## https://github.com/medspacy/medspacy/blob/master/medspacy/sentence_splitting.py
-import pysbd
-from PyRuSH import PyRuSHSentencizer
-from spacy.language import Language
-
-@Language.factory("medspacy_pysbd")
-class PySBDSenteceSplitter:
-    def __init__(self, name, nlp, clean=False):
-        self.name = name
-        self.nlp = nlp
-        self.seg = pysbd.Segmenter(language="en", clean=clean, char_span=True)
-
-    def __call__(self, doc):
-        sents_char_spans = self.seg.segment(doc.text_with_ws)
-        start_token_ids = [sent.start for sent in sents_char_spans]
-        for token in doc:
-            token.is_sent_start = True if token.idx in start_token_ids else False
-        return doc
-
-```
-
-
 
 ## Spacy annotate
 
@@ -213,7 +185,7 @@ doc = list(nlp.pipe(texts))
 
 ## Extraction functions
 
-### spacy_get_df
+### Standard annotation
 
 ```{python}
 def extract_df(doc:spacy.tokens.doc.Doc):
@@ -277,7 +249,7 @@ reticulate::py$sp_df |>
 
 
 
-### spacy_get_entities
+### Entities & linking
 
 ```{python}
 def spacy_get_entities(docs):
@@ -333,7 +305,7 @@ reticulate::py$sp_entities |>
 
 
 
-### spacy_get_abbrevs
+### Abbreviations
 
 ```{python}
 def spacy_get_abbrevs(docs):
@@ -370,7 +342,7 @@ reticulate::py$sp_abbrevs |>
 
 
 
-### spacy_get_nps
+### Noun phrases
 
 ```{python}
 def spacy_get_nps(docs):
@@ -406,7 +378,7 @@ reticulate::py$sp_noun_phrases |>
 ```
 
 
-### spacy_get_hyponyms
+### Hyponyms
 
 ```{python}
 def spacy_get_hyponyms(docs):
@@ -445,14 +417,14 @@ reticulate::py$sp_hearst |>
 
 
 
-### spacy_get_negation
+### Negation
 
 ```{python eval=FALSE, include=FALSE}
 # https://medium.com/@MansiKukreja/clinical-text-negation-handling-using-negspacy-and-scispacy-233ce69ab2ac
 ```
 
 
-### spacy_get_sentences
+### Sentences
 
 ```{python}
 def spacy_get_sentences(docs):
@@ -465,14 +437,11 @@ def spacy_get_sentences(docs):
     
     for ix, doc in enumerate(docs):
       for sent_i, sent in enumerate(doc.sents):
-        
         details_dict["doc_id"].append(ix)
         details_dict["sent_id"].append(sent_i)
-        
         sentences = str(sent).strip()
         details_dict["text"].append(sentences)
     
-      
     dd =  pd.DataFrame.from_dict(details_dict)     
     return dd
   
@@ -497,59 +466,38 @@ mts_df <- reticulate::r_to_py(mts)
 ```
 
 
-```{python eval=FALSE, include=FALSE}
+### medspacy
+
+```{python}
 # jupyter-notebook
 import medspacy
-nlp = spacy.load("en_core_sci_sm")
-nlp.add_pipe("sentencizer", before = 'ner')
-
-nlp = medspacy.load(nlp)
+# nlp = spacy.load("en_core_sci_sm")
+nlp = medspacy.load("en_core_sci_sm", disable = {'medspacy_target_matcher', 'medspacy_pyrush'})
+nlp.add_pipe("sentencizer", first = True)
 sectionizer = nlp.add_pipe("medspacy_sectionizer")
-
 print(nlp.pipe_names)
+```
 
+
+```{python}
 texts0 = list(r.mts_df['transcription'][1:100])
 doc = list(nlp.pipe(texts0))
 ```
 
 
-```{python eval=FALSE, include=FALSE}
-text = """
-Past Medical History:
-1. Atrial fibrillation
-2. Type II Diabetes Mellitus
+```{python}
+#  is_negated
+#  is_uncertain
+#  is_historical
+#  is_family
+#  is_hypothetical
 
-Assessment and Plan:
-There is no evidence of pneumonia. Continue warfarin for Afib. Follow up for management of type 2 DM.
-"""
-
-doc = nlp(text)
-visualize_ent(doc)
-```
-
-
-
-```{python eval=FALSE, include=FALSE}
-   # is_negated
-   #  is_uncertain
-   #  is_historical
-   #  is_family
-   #  is_hypothetical
-
-for ent in doc.ents:
-    print(ent, ent._.section.category, sep="  |  ")
-    print("Historical:", ent._.is_historical, "\tFamily:", ent._.is_family, "\tHypothetical:", ent._.is_hypothetical)
-    print()
-```
- 
-
-
-```{python eval=FALSE, include=FALSE}
 def spacy_get_transcripts(docs):
 
     details_dict = {
       "doc_id": [], 
       "sent_id": [],
+      "section_category": [],
       "entity": [], 
       "is_historical": [],
       "start": [], 
@@ -559,13 +507,14 @@ def spacy_get_transcripts(docs):
     for ix, doc in enumerate(docs):
       for sent_i, sent in enumerate(doc.sents):
         
-        for nc in sent.ents:
+        for ent in sent.ents:
           details_dict["doc_id"].append(ix)
           details_dict["sent_id"].append(sent_i)
-          details_dict["entity"].append(nc.text)
-          details_dict["is_historical"].append(nc.is_historical)
-          details_dict["start"].append(nc.start)
-          details_dict["end"].append(nc.end)
+          details_dict["section_category"].append(ent._.section_category)
+          details_dict["entity"].append(ent.text)
+          details_dict["is_historical"].append(ent._.is_historical)
+          details_dict["start"].append(ent.start)
+          details_dict["end"].append(ent.end)
     
     dd =  pd.DataFrame.from_dict(details_dict)     
     return dd
@@ -574,6 +523,15 @@ sp_transcripts = spacy_get_transcripts(doc)
 ```
 
 
+```{r}
+reticulate::py$sp_transcripts |>
+  slice(1:5) |> knitr::kable()
+```
+
+### med7
+
+
+## Relation extraction
 
 
 
@@ -582,6 +540,7 @@ sp_transcripts = spacy_get_transcripts(doc)
 Eyre, A.B. Chapman, K.S. Peterson, J. Shi, P.R. Alba, M.M. Jones, T.L. Box, S.L. DuVall, O. V Patterson, Launching into clinical space with medspaCy: a new clinical text processing toolkit in Python, AMIA Annu. Symp. Proc. 2021 (in Press. (n.d.).
 http://arxiv.org/abs/2106.07799.
 
+Kormilitzin, A., Vaci, N., Liu, Q., & Nevado-Holgado, A. (2021). Med7: A transferable clinical natural language processing model for electronic health records. Artificial Intelligence in Medicine, 118, 102086.
 
 Neumann, M., King, D., Beltagy, I., & Ammar, W. (2019). ScispaCy: fast and robust models for biomedical natural language processing. arXiv preprint arXiv:1902.07669.
 

@@ -13,18 +13,19 @@
     -   [PubMed abstracts](#pubmed-abstracts)
     -   [Libraries](#libraries)
         -   [Scispacy components](#scispacy-components)
-        -   [Custom sentencizer via `pySBD` &
-            `medspacy`](#custom-sentencizer-via-%60pysbd%60-&-%60medspacy%60)
     -   [Spacy annotate](#spacy-annotate)
     -   [Extraction functions](#extraction-functions)
-        -   [spacy_get_df](#spacy_get_df)
-        -   [spacy_get_entities](#spacy_get_entities)
-        -   [spacy_get_abbrevs](#spacy_get_abbrevs)
-        -   [spacy_get_nps](#spacy_get_nps)
-        -   [spacy_get_hyponyms](#spacy_get_hyponyms)
-        -   [spacy_get_negation](#spacy_get_negation)
-        -   [spacy_get_sentences](#spacy_get_sentences)
+        -   [Standard annotation](#standard-annotation)
+        -   [Entities & linking](#entities-&-linking)
+        -   [Abbreviations](#abbreviations)
+        -   [Noun phrases](#noun-phrases)
+        -   [Hyponyms](#hyponyms)
+        -   [Negation](#negation)
+        -   [Sentences](#sentences)
     -   [Medical transcript data](#medical-transcript-data)
+        -   [medspacy](#medspacy)
+        -   [med7](#med7)
+    -   [Relation extraction](#relation-extraction)
     -   [References](#references)
 
 ------------------------------------------------------------------------
@@ -100,7 +101,7 @@ import scispacy
 
 ``` python
 nlp = spacy.load("en_ner_bc5cdr_md")
-nlp.add_pipe("sentencizer", before = 'ner')
+nlp.add_pipe("sentencizer", first=True)
 from scispacy.abbreviation import AbbreviationDetector
 nlp.add_pipe("abbreviation_detector")
 
@@ -122,9 +123,7 @@ nlp.add_pipe(
 print(nlp.pipe_names)
 ```
 
-    ## ['tok2vec', 'tagger', 'attribute_ruler', 'lemmatizer', 'parser', 'sentencizer', 'ner', 'abbreviation_detector', 'scispacy_linker', 'hyponym_detector']
-
-### Custom sentencizer via `pySBD` & `medspacy`
+    ## ['sentencizer', 'tok2vec', 'tagger', 'attribute_ruler', 'lemmatizer', 'parser', 'ner', 'abbreviation_detector', 'scispacy_linker', 'hyponym_detector']
 
 ## Spacy annotate
 
@@ -135,7 +134,7 @@ doc = list(nlp.pipe(texts))
 
 ## Extraction functions
 
-### spacy_get_df
+### Standard annotation
 
 ``` python
 def extract_df(doc:spacy.tokens.doc.Doc):
@@ -203,7 +202,7 @@ reticulate::py$sp_df |>
 |      0 | drug      |           3 |       0 | drug     |          | NN  | appos     | NOUN  | FALSE   | TRUE     | FALSE    | FALSE    |
 |      0 | combining |           4 |       0 | combine  |          | VBG | acl       | VERB  | FALSE   | TRUE     | FALSE    | FALSE    |
 
-### spacy_get_entities
+### Entities & linking
 
 ``` python
 def spacy_get_entities(docs):
@@ -264,7 +263,7 @@ reticulate::py$sp_entities |>
 |      0 |       0 | COVID-19 infection | DISEASE   |          |            |       |        34 |      36 |
 |      0 |       1 | nirmatrelvir       | CHEMICAL  |          |            |       |        48 |      49 |
 
-### spacy_get_abbrevs
+### Abbreviations
 
 ``` python
 def spacy_get_abbrevs(docs):
@@ -301,17 +300,17 @@ reticulate::py$sp_abbrevs |>
 | doc_id | abrv    | start | end | long_form                                     |
 |-------:|:--------|------:|----:|:----------------------------------------------|
 |      1 | NTD     |     8 |   9 | neglected tropical disease                    |
+|      1 | LiMetRS |    58 |  59 | Leishmania infantum methionyl-tRNA synthetase |
 |      1 | LiMetRS |   100 | 101 | Leishmania infantum methionyl-tRNA synthetase |
 |      1 | LiMetRS |   251 | 252 | Leishmania infantum methionyl-tRNA synthetase |
-|      1 | LiMetRS |    58 |  59 | Leishmania infantum methionyl-tRNA synthetase |
 |      5 | GPCRs   |   134 | 135 | G protein-coupled receptors                   |
-|      5 | GPCRs   |     4 |   5 | G protein-coupled receptors                   |
 |      5 | GPCRs   |   109 | 110 | G protein-coupled receptors                   |
-|      5 | GPCRs   |    32 |  33 | G protein-coupled receptors                   |
-|      5 | GPCRs   |    60 |  61 | G protein-coupled receptors                   |
 |      5 | GPCRs   |   149 | 150 | G protein-coupled receptors                   |
+|      5 | GPCRs   |    60 |  61 | G protein-coupled receptors                   |
+|      5 | GPCRs   |   311 | 312 | G protein-coupled receptors                   |
+|      5 | GPCRs   |     4 |   5 | G protein-coupled receptors                   |
 
-### spacy_get_nps
+### Noun phrases
 
 ``` python
 def spacy_get_nps(docs):
@@ -353,7 +352,7 @@ reticulate::py$sp_noun_phrases |>
 |      0 |       0 | ritonavir    |     7 |   8 |
 |      0 |       0 | the impact   |    31 |  33 |
 
-### spacy_get_hyponyms
+### Hyponyms
 
 ``` python
 def spacy_get_hyponyms(docs):
@@ -401,9 +400,9 @@ reticulate::py$sp_hearst |>
 |      9 | include    | metabolites   | enzymes                     |
 |      9 | include    | metabolites   | compounds                   |
 
-### spacy_get_negation
+### Negation
 
-### spacy_get_sentences
+### Sentences
 
 ``` python
 def spacy_get_sentences(docs):
@@ -416,14 +415,11 @@ def spacy_get_sentences(docs):
     
     for ix, doc in enumerate(docs):
       for sent_i, sent in enumerate(doc.sents):
-        
         details_dict["doc_id"].append(ix)
         details_dict["sent_id"].append(sent_i)
-        
         sentences = str(sent).strip()
         details_dict["text"].append(sentences)
     
-      
     dd =  pd.DataFrame.from_dict(details_dict)     
     return dd
   
@@ -452,12 +448,94 @@ mts <- clinspacy::dataset_mtsamples()
 mts_df <- reticulate::r_to_py(mts)
 ```
 
+### medspacy
+
+``` python
+# jupyter-notebook
+import medspacy
+# nlp = spacy.load("en_core_sci_sm")
+nlp = medspacy.load("en_core_sci_sm", disable = {'medspacy_target_matcher', 'medspacy_pyrush'})
+nlp.add_pipe("sentencizer", first = True)
+```
+
+    ## <spacy.pipeline.sentencizer.Sentencizer object at 0x7f4cd4a0d500>
+
+``` python
+sectionizer = nlp.add_pipe("medspacy_sectionizer")
+print(nlp.pipe_names)
+```
+
+    ## ['sentencizer', 'tok2vec', 'tagger', 'attribute_ruler', 'lemmatizer', 'parser', 'ner', 'medspacy_context', 'medspacy_sectionizer']
+
+``` python
+texts0 = list(r.mts_df['transcription'][1:100])
+doc = list(nlp.pipe(texts0))
+```
+
+``` python
+#  is_negated
+#  is_uncertain
+#  is_historical
+#  is_family
+#  is_hypothetical
+
+def spacy_get_transcripts(docs):
+
+    details_dict = {
+      "doc_id": [], 
+      "sent_id": [],
+      "section_category": [],
+      "entity": [], 
+      "is_historical": [],
+      "start": [], 
+      "end": []
+      }
+    
+    for ix, doc in enumerate(docs):
+      for sent_i, sent in enumerate(doc.sents):
+        
+        for ent in sent.ents:
+          details_dict["doc_id"].append(ix)
+          details_dict["sent_id"].append(sent_i)
+          details_dict["section_category"].append(ent._.section_category)
+          details_dict["entity"].append(ent.text)
+          details_dict["is_historical"].append(ent._.is_historical)
+          details_dict["start"].append(ent.start)
+          details_dict["end"].append(ent.end)
+    
+    dd =  pd.DataFrame.from_dict(details_dict)     
+    return dd
+  
+sp_transcripts = spacy_get_transcripts(doc)
+```
+
+``` r
+reticulate::py$sp_transcripts |>
+  slice(1:5) |> knitr::kable()
+```
+
+| doc_id | sent_id | section_category     | entity              | is_historical | start | end |
+|------:|-------:|:-----------------|:-----------------|:------------|-----:|----:|
+|      0 |       0 | past_medical_history | PAST                | TRUE          |     0 |   1 |
+|      0 |       0 | past_medical_history | difficulty climbing | TRUE          |     7 |   9 |
+|      0 |       0 | past_medical_history | difficulty          | TRUE          |    11 |  12 |
+|      0 |       0 | past_medical_history | airline seats       | TRUE          |    13 |  15 |
+|      0 |       0 | past_medical_history | tying shoes         | TRUE          |    16 |  18 |
+
+### med7
+
+## Relation extraction
+
 ## References
 
 Eyre, A.B. Chapman, K.S. Peterson, J. Shi, P.R. Alba, M.M. Jones, T.L.
 Box, S.L. DuVall, O. V Patterson, Launching into clinical space with
 medspaCy: a new clinical text processing toolkit in Python, AMIA Annu.
 Symp. Proc. 2021 (in Press. (n.d.). <http://arxiv.org/abs/2106.07799>.
+
+Kormilitzin, A., Vaci, N., Liu, Q., & Nevado-Holgado, A. (2021). Med7: A
+transferable clinical natural language processing model for electronic
+health records. Artificial Intelligence in Medicine, 118, 102086.
 
 Neumann, M., King, D., Beltagy, I., & Ammar, W. (2019). ScispaCy: fast
 and robust models for biomedical natural language processing. arXiv
