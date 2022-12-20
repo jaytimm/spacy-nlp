@@ -24,8 +24,6 @@
         -   [Sentences](#sentences)
     -   [Medical transcript data](#medical-transcript-data)
         -   [medspacy](#medspacy)
-        -   [med7](#med7)
-    -   [Relation extraction](#relation-extraction)
     -   [References](#references)
 
 ------------------------------------------------------------------------
@@ -300,15 +298,15 @@ reticulate::py$sp_abbrevs |>
 | doc_id | abrv    | start | end | long_form                                     |
 |-------:|:--------|------:|----:|:----------------------------------------------|
 |      1 | NTD     |     8 |   9 | neglected tropical disease                    |
-|      1 | LiMetRS |    58 |  59 | Leishmania infantum methionyl-tRNA synthetase |
 |      1 | LiMetRS |   100 | 101 | Leishmania infantum methionyl-tRNA synthetase |
+|      1 | LiMetRS |    58 |  59 | Leishmania infantum methionyl-tRNA synthetase |
 |      1 | LiMetRS |   251 | 252 | Leishmania infantum methionyl-tRNA synthetase |
-|      5 | GPCRs   |   134 | 135 | G protein-coupled receptors                   |
 |      5 | GPCRs   |   109 | 110 | G protein-coupled receptors                   |
+|      5 | GPCRs   |   134 | 135 | G protein-coupled receptors                   |
+|      5 | GPCRs   |     4 |   5 | G protein-coupled receptors                   |
 |      5 | GPCRs   |   149 | 150 | G protein-coupled receptors                   |
 |      5 | GPCRs   |    60 |  61 | G protein-coupled receptors                   |
 |      5 | GPCRs   |   311 | 312 | G protein-coupled receptors                   |
-|      5 | GPCRs   |     4 |   5 | G protein-coupled receptors                   |
 
 ### Noun phrases
 
@@ -458,7 +456,7 @@ nlp = medspacy.load("en_core_sci_sm", disable = {'medspacy_target_matcher', 'med
 nlp.add_pipe("sentencizer", first = True)
 ```
 
-    ## <spacy.pipeline.sentencizer.Sentencizer object at 0x7f4cd4a0d500>
+    ## <spacy.pipeline.sentencizer.Sentencizer object at 0x7ff0b948e500>
 
 ``` python
 sectionizer = nlp.add_pipe("medspacy_sectionizer")
@@ -521,10 +519,6 @@ reticulate::py$sp_transcripts |>
 |      0 |       0 | past_medical_history | difficulty          | TRUE          |    11 |  12 |
 |      0 |       0 | past_medical_history | airline seats       | TRUE          |    13 |  15 |
 |      0 |       0 | past_medical_history | tying shoes         | TRUE          |    16 |  18 |
-
-### med7
-
-## Relation extraction
 
 ## References
 
