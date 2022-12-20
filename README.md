@@ -7,8 +7,6 @@
 > working with actual corpora, as opposed to
 > `nlp("This is a sentence.")`.
 
-> WITHOUT the stupid shit that python bloggers do.
-
 > `spaCy` is beyond groovy! Truly.
 
 ------------------------------------------------------------------------
@@ -331,16 +329,16 @@ reticulate::py$sp_abbrevs |>
 
 | doc_id | abrv  | start | end | long_form                |
 |-------:|:------|------:|----:|:-------------------------|
-|      0 | CD    |   179 | 180 | Chagas disease           |
-|      0 | CD    |   197 | 198 | Chagas disease           |
 |      0 | CD    |     3 |   4 | Chagas disease           |
+|      0 | CD    |   197 | 198 | Chagas disease           |
+|      0 | CD    |   179 | 180 | Chagas disease           |
 |      1 | FEP   |   111 | 112 | free energy perturbation |
 |      1 | FEP   |   123 | 124 | free energy perturbation |
-|      7 | PLpro |   181 | 182 | Papain like Protease     |
-|      7 | PLpro |   151 | 152 | Papain like Protease     |
-|      7 | PLpro |   296 | 297 | Papain like Protease     |
 |      7 | PLpro |   338 | 339 | Papain like Protease     |
 |      7 | PLpro |    51 |  52 | Papain like Protease     |
+|      7 | PLpro |   296 | 297 | Papain like Protease     |
+|      7 | PLpro |   151 | 152 | Papain like Protease     |
+|      7 | PLpro |   101 | 102 | Papain like Protease     |
 
 ### spacy_get_nps
 

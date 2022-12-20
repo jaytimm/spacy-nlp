@@ -18,8 +18,6 @@ source("/home/jtimm/pCloudDrive/GitHub/packages/render_toc.R")
 
 > An attempt at organizing some `spaCy` workflows -- by a lowly R programmer.  Some functions for disentangling `spaCy` output.  For working with actual corpora, as opposed to `nlp("This is a sentence.")`.  
 
-> WITHOUT the stupid shit that python bloggers do.
-
 > `spaCy` is beyond groovy! Truly.
 
 ---
