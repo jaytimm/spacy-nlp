@@ -16,9 +16,11 @@ source("/home/jtimm/pCloudDrive/GitHub/packages/render_toc.R")
 
 `r paste0('*Updated: ', Sys.Date(),'*')` 
 
-> An attempt at organizing some `spaCy` workflows -- by a lowly R programmer.  Some functions for disentangling `spaCy` output.  For working with actual corpora, as opposed to `nlp("This is a sentence.")`.  (Also, without the other stupid shit python bloggers do.)
+> An attempt at organizing some `spaCy` workflows -- by a lowly R programmer.  Some functions for disentangling `spaCy` output.  For working with actual corpora, as opposed to `nlp("This is a sentence.")`.  
 
-> spaCy is beyond groovy! Truly.
+> WITHOUT the stupid shit that python bloggers do.
+
+> `spaCy` is beyond groovy! Truly.
 
 ---
 
