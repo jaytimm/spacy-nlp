@@ -16,9 +16,7 @@ source("/home/jtimm/pCloudDrive/GitHub/packages/render_toc.R")
 
 `r paste0('*Updated: ', Sys.Date(),'*')` 
 
-> An attempt at organizing some `spaCy` workflows -- by a lowly R programmer.  Some functions for disentangling `spaCy` output.  For working with actual corpora, as opposed to `nlp("This is a sentence.")`.  
-
-> `spaCy` is beyond groovy! Truly.
+> An attempt at organizing some `spaCy` workflows.  Some functions for disentangling `spaCy` output.  For working with actual corpora, as opposed to `nlp("This is a sentence.")`.  
 
 ---
 
@@ -56,23 +54,20 @@ render_toc(filename = "/home/jtimm/pCloudDrive/GitHub/git-projects/spacy-nlp/REA
 conda create -n scispacy python=3.9
 source activate scispacy 
 conda install transformers
-/home/jtimm/anaconda3/envs/scispacy/bin/pip install scispacy
-/home/jtimm/anaconda3/envs/scispacy/bin/pip install pysbd
-/home/jtimm/anaconda3/envs/scispacy/bin/pip install medspacy
 
-/home/jtimm/anaconda3/envs/scispacy/bin/pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
-
-## problematic with new spacy -- 
-/home/jtimm/anaconda3/envs/scispacy/bin/pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.4.0/en_ner_bc5cdr_md-0.4.0.tar.gz
-
-## /home/jtimm/anaconda3/envs/scispacy/bin/pip install spacy-lookup
-## python -m spacy download en_core_web_sm
+cd /home/jtimm/anaconda3/envs/scispacy/bin/
+pip install scispacy
+pip install pysbd
+pip install medspacy
+pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
+pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.4.0/en_ner_bc5cdr_md-0.4.0.tar.gz
 ```
 
 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 ## <R-console>
+library(dplyr)
 Sys.setenv(RETICULATE_PYTHON = "/home/jtimm/anaconda3/envs/scispacy/bin/python")
 library(reticulate)
 #reticulate::use_python("/home/jtimm/anaconda3/envs/m3demo/bin/python")
@@ -85,7 +80,6 @@ reticulate::use_condaenv(condaenv = "scispacy",
 ## PubMed abstracts
 
 ```{r message=FALSE, warning=FALSE}
-library(dplyr)
 dd <- pubmedr::pmed_search_pubmed(search_term = 'drug discovery', 
                                   fields = c('TIAB','MH'))
 
@@ -181,7 +175,7 @@ print(nlp.pipe_names)
 
 ### Custom sentencizer via `pySBD` & `medspacy`
 
-```{python eval=FALSE}
+```{python eval=FALSE, include=FALSE}
 # Doc.set_extension("pysbd_sentences", getter = pysbd_sentence_boundaries, force=True)
 # nlp.add_pipe('pysbd_sentences', before = 'ner')
 
@@ -191,7 +185,7 @@ from PyRuSH import PyRuSHSentencizer
 from spacy.language import Language
 
 @Language.factory("medspacy_pysbd")
-class PySBDSenteceSplsitter:
+class PySBDSenteceSplitter:
     def __init__(self, name, nlp, clean=False):
         self.name = name
         self.nlp = nlp
@@ -203,6 +197,7 @@ class PySBDSenteceSplsitter:
         for token in doc:
             token.is_sent_start = True if token.idx in start_token_ids else False
         return doc
+
 ```
 
 
@@ -450,6 +445,47 @@ reticulate::py$sp_hearst |>
 
 
 
+### spacy_get_negation
+
+```{python eval=FALSE, include=FALSE}
+# https://medium.com/@MansiKukreja/clinical-text-negation-handling-using-negspacy-and-scispacy-233ce69ab2ac
+```
+
+
+### spacy_get_sentences
+
+```{python}
+def spacy_get_sentences(docs):
+
+    details_dict = {
+      "doc_id": [], 
+      "sent_id": [],
+      "text": []
+      }
+    
+    for ix, doc in enumerate(docs):
+      for sent_i, sent in enumerate(doc.sents):
+        
+        details_dict["doc_id"].append(ix)
+        details_dict["sent_id"].append(sent_i)
+        
+        sentences = str(sent).strip()
+        details_dict["text"].append(sentences)
+    
+      
+    dd =  pd.DataFrame.from_dict(details_dict)     
+    return dd
+  
+sp_sentences = spacy_get_sentences(doc)
+```
+
+
+```{r}
+reticulate::py$sp_sentences |>
+  slice(1:5) |> knitr::kable()
+```
+
+
 
 ## Medical transcript data
 
@@ -464,21 +500,41 @@ mts_df <- reticulate::r_to_py(mts)
 ```{python eval=FALSE, include=FALSE}
 # jupyter-notebook
 import medspacy
-nlp = medspacy.load()
+nlp = spacy.load("en_core_sci_sm")
+nlp.add_pipe("sentencizer", before = 'ner')
+
+nlp = medspacy.load(nlp)
 sectionizer = nlp.add_pipe("medspacy_sectionizer")
+
+print(nlp.pipe_names)
 
 texts0 = list(r.mts_df['transcription'][1:100])
 doc = list(nlp.pipe(texts0))
 ```
 
 
+```{python eval=FALSE, include=FALSE}
+text = """
+Past Medical History:
+1. Atrial fibrillation
+2. Type II Diabetes Mellitus
+
+Assessment and Plan:
+There is no evidence of pneumonia. Continue warfarin for Afib. Follow up for management of type 2 DM.
+"""
+
+doc = nlp(text)
+visualize_ent(doc)
+```
+
+
 
 ```{python eval=FALSE, include=FALSE}
-   is_negated
-    is_uncertain
-    is_historical
-    is_family
-    is_hypothetical
+   # is_negated
+   #  is_uncertain
+   #  is_historical
+   #  is_family
+   #  is_hypothetical
 
 for ent in doc.ents:
     print(ent, ent._.section.category, sep="  |  ")
@@ -488,13 +544,14 @@ for ent in doc.ents:
  
 
 
-```{python}
-def spacy_get_nps(docs):
+```{python eval=FALSE, include=FALSE}
+def spacy_get_transcripts(docs):
 
     details_dict = {
       "doc_id": [], 
       "sent_id": [],
-      "nounc": [], 
+      "entity": [], 
+      "is_historical": [],
       "start": [], 
       "end": []
       }
@@ -502,17 +559,18 @@ def spacy_get_nps(docs):
     for ix, doc in enumerate(docs):
       for sent_i, sent in enumerate(doc.sents):
         
-        for nc in sent.noun_chunks:
+        for nc in sent.ents:
           details_dict["doc_id"].append(ix)
           details_dict["sent_id"].append(sent_i)
-          details_dict["nounc"].append(nc.text)
+          details_dict["entity"].append(nc.text)
+          details_dict["is_historical"].append(nc.is_historical)
           details_dict["start"].append(nc.start)
           details_dict["end"].append(nc.end)
     
     dd =  pd.DataFrame.from_dict(details_dict)     
     return dd
   
-sp_noun_phrases = spacy_get_nps(doc)
+sp_transcripts = spacy_get_transcripts(doc)
 ```
 
 

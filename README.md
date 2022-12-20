@@ -1,13 +1,10 @@
 # Some spaCy & scispacy workflows
 
-*Updated: 2022-12-19*
+*Updated: 2022-12-20*
 
-> An attempt at organizing some `spaCy` workflows – by a lowly R
-> programmer. Some functions for disentangling `spaCy` output. For
-> working with actual corpora, as opposed to
-> `nlp("This is a sentence.")`.
-
-> `spaCy` is beyond groovy! Truly.
+> An attempt at organizing some `spaCy` workflows. Some functions for
+> disentangling `spaCy` output. For working with actual corpora, as
+> opposed to `nlp("This is a sentence.")`.
 
 ------------------------------------------------------------------------
 
@@ -25,6 +22,8 @@
         -   [spacy_get_abbrevs](#spacy_get_abbrevs)
         -   [spacy_get_nps](#spacy_get_nps)
         -   [spacy_get_hyponyms](#spacy_get_hyponyms)
+        -   [spacy_get_negation](#spacy_get_negation)
+        -   [spacy_get_sentences](#spacy_get_sentences)
     -   [Medical transcript data](#medical-transcript-data)
     -   [References](#references)
 
@@ -36,21 +35,18 @@
 conda create -n scispacy python=3.9
 source activate scispacy 
 conda install transformers
-/home/jtimm/anaconda3/envs/scispacy/bin/pip install scispacy
-/home/jtimm/anaconda3/envs/scispacy/bin/pip install pysbd
-/home/jtimm/anaconda3/envs/scispacy/bin/pip install medspacy
 
-/home/jtimm/anaconda3/envs/scispacy/bin/pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
-
-## problematic with new spacy -- 
-/home/jtimm/anaconda3/envs/scispacy/bin/pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.4.0/en_ner_bc5cdr_md-0.4.0.tar.gz
-
-## /home/jtimm/anaconda3/envs/scispacy/bin/pip install spacy-lookup
-## python -m spacy download en_core_web_sm
+cd /home/jtimm/anaconda3/envs/scispacy/bin/
+pip install scispacy
+pip install pysbd
+pip install medspacy
+pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
+pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.4.0/en_ner_bc5cdr_md-0.4.0.tar.gz
 ```
 
 ``` r
 ## <R-console>
+library(dplyr)
 Sys.setenv(RETICULATE_PYTHON = "/home/jtimm/anaconda3/envs/scispacy/bin/python")
 library(reticulate)
 #reticulate::use_python("/home/jtimm/anaconda3/envs/m3demo/bin/python")
@@ -61,7 +57,6 @@ reticulate::use_condaenv(condaenv = "scispacy",
 ## PubMed abstracts
 
 ``` r
-library(dplyr)
 dd <- pubmedr::pmed_search_pubmed(search_term = 'drug discovery', 
                                   fields = c('TIAB','MH'))
 ```
@@ -130,30 +125,6 @@ print(nlp.pipe_names)
     ## ['tok2vec', 'tagger', 'attribute_ruler', 'lemmatizer', 'parser', 'sentencizer', 'ner', 'abbreviation_detector', 'scispacy_linker', 'hyponym_detector']
 
 ### Custom sentencizer via `pySBD` & `medspacy`
-
-``` python
-# Doc.set_extension("pysbd_sentences", getter = pysbd_sentence_boundaries, force=True)
-# nlp.add_pipe('pysbd_sentences', before = 'ner')
-
-## https://github.com/medspacy/medspacy/blob/master/medspacy/sentence_splitting.py
-import pysbd
-from PyRuSH import PyRuSHSentencizer
-from spacy.language import Language
-
-@Language.factory("medspacy_pysbd")
-class PySBDSenteceSplsitter:
-    def __init__(self, name, nlp, clean=False):
-        self.name = name
-        self.nlp = nlp
-        self.seg = pysbd.Segmenter(language="en", clean=clean, char_span=True)
-
-    def __call__(self, doc):
-        sents_char_spans = self.seg.segment(doc.text_with_ws)
-        start_token_ids = [sent.start for sent in sents_char_spans]
-        for token in doc:
-            token.is_sent_start = True if token.idx in start_token_ids else False
-        return doc
-```
 
 ## Spacy annotate
 
@@ -224,13 +195,13 @@ reticulate::py$sp_df |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | token   | token_order | sent_id | lemma   | ent_type | tag   | dep      | pos   | is_stop | is_alpha | is_digit | is_punct |
-|----:|:-----|-------:|-----:|:-----|:-----|:----|:-----|:----|:-----|:-----|:-----|:-----|
-|      0 | Chagas  |           0 |       0 | chagas  | DISEASE  | JJ    | compound | ADJ   | FALSE   | TRUE     | FALSE    | FALSE    |
-|      0 | disease |           1 |       0 | disease | DISEASE  | NN    | nsubj    | NOUN  | FALSE   | TRUE     | FALSE    | FALSE    |
-|      0 | (       |           2 |       0 | (       |          | -LRB- | punct    | PUNCT | FALSE   | FALSE    | FALSE    | TRUE     |
-|      0 | CD      |           3 |       0 | cd      |          | NN    | appos    | NOUN  | FALSE   | TRUE     | FALSE    | FALSE    |
-|      0 | )       |           4 |       0 | )       |          | -RRB- | punct    | PUNCT | FALSE   | FALSE    | FALSE    | TRUE     |
+| doc_id | token     | token_order | sent_id | lemma    | ent_type | tag | dep       | pos   | is_stop | is_alpha | is_digit | is_punct |
+|----:|:------|-------:|-----:|:-----|:-----|:---|:------|:----|:-----|:-----|:-----|:-----|
+|      0 | Paxlovid  |           0 |       0 | Paxlovid |          | NNP | nsubjpass | PROPN | FALSE   | TRUE     | FALSE    | FALSE    |
+|      0 | ,         |           1 |       0 | ,        |          | ,   | punct     | PUNCT | FALSE   | FALSE    | FALSE    | TRUE     |
+|      0 | a         |           2 |       0 | a        |          | DT  | det       | DET   | TRUE    | TRUE     | FALSE    | FALSE    |
+|      0 | drug      |           3 |       0 | drug     |          | NN  | appos     | NOUN  | FALSE   | TRUE     | FALSE    | FALSE    |
+|      0 | combining |           4 |       0 | combine  |          | VBG | acl       | VERB  | FALSE   | TRUE     | FALSE    | FALSE    |
 
 ### spacy_get_entities
 
@@ -285,13 +256,13 @@ reticulate::py$sp_entities |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | sent_id | ent_text              | ent_label | cui      | descriptor       | score | ent_start | ent_end |
-|-----:|------:|:---------------|:-------|:------|:-----------|:----|-------:|------:|
-|      0 |       0 | Chagas disease        | DISEASE   | C0041234 | Chagas Disease   | 1     |         0 |       2 |
-|      0 |       0 | protozoan Trypanosoma | DISEASE   | C0033739 | Protozoa         | 0.71  |        12 |      14 |
-|      0 |       1 | toxicity              | DISEASE   | C0040539 | Toxicity aspects | 1     |        29 |      30 |
-|      0 |       3 | chloro-oximes         | CHEMICAL  |          |                  |       |        64 |      65 |
-|      0 |       3 | acetylenes            | CHEMICAL  | C0001052 | acetylene        | 1     |        66 |      67 |
+| doc_id | sent_id | ent_text           | ent_label | cui      | descriptor | score | ent_start | ent_end |
+|-----:|------:|:--------------|:--------|:-------|:--------|:-----|--------:|------:|
+|      0 |       0 | nirmatrelvir       | CHEMICAL  |          |            |       |         5 |       6 |
+|      0 |       0 | ritonavir          | CHEMICAL  | C0292818 | ritonavir  | 1     |         7 |       8 |
+|      0 |       0 | COVID-19           | CHEMICAL  | C5203670 | COVID-19   | 1     |        15 |      16 |
+|      0 |       0 | COVID-19 infection | DISEASE   |          |            |       |        34 |      36 |
+|      0 |       1 | nirmatrelvir       | CHEMICAL  |          |            |       |        48 |      49 |
 
 ### spacy_get_abbrevs
 
@@ -327,18 +298,18 @@ reticulate::py$sp_abbrevs |>
   slice(1:10) |> knitr::kable()
 ```
 
-| doc_id | abrv  | start | end | long_form                |
-|-------:|:------|------:|----:|:-------------------------|
-|      0 | CD    |     3 |   4 | Chagas disease           |
-|      0 | CD    |   197 | 198 | Chagas disease           |
-|      0 | CD    |   179 | 180 | Chagas disease           |
-|      1 | FEP   |   111 | 112 | free energy perturbation |
-|      1 | FEP   |   123 | 124 | free energy perturbation |
-|      7 | PLpro |   338 | 339 | Papain like Protease     |
-|      7 | PLpro |    51 |  52 | Papain like Protease     |
-|      7 | PLpro |   296 | 297 | Papain like Protease     |
-|      7 | PLpro |   151 | 152 | Papain like Protease     |
-|      7 | PLpro |   101 | 102 | Papain like Protease     |
+| doc_id | abrv    | start | end | long_form                                     |
+|-------:|:--------|------:|----:|:----------------------------------------------|
+|      1 | NTD     |     8 |   9 | neglected tropical disease                    |
+|      1 | LiMetRS |   100 | 101 | Leishmania infantum methionyl-tRNA synthetase |
+|      1 | LiMetRS |   251 | 252 | Leishmania infantum methionyl-tRNA synthetase |
+|      1 | LiMetRS |    58 |  59 | Leishmania infantum methionyl-tRNA synthetase |
+|      5 | GPCRs   |   134 | 135 | G protein-coupled receptors                   |
+|      5 | GPCRs   |     4 |   5 | G protein-coupled receptors                   |
+|      5 | GPCRs   |   109 | 110 | G protein-coupled receptors                   |
+|      5 | GPCRs   |    32 |  33 | G protein-coupled receptors                   |
+|      5 | GPCRs   |    60 |  61 | G protein-coupled receptors                   |
+|      5 | GPCRs   |   149 | 150 | G protein-coupled receptors                   |
 
 ### spacy_get_nps
 
@@ -374,13 +345,13 @@ reticulate::py$sp_noun_phrases |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | sent_id | nounc           | start | end |
-|-------:|--------:|:----------------|------:|----:|
-|      0 |       0 | Chagas disease  |     0 |   2 |
-|      0 |       0 | (CD             |     2 |   4 |
-|      0 |       1 | The two drugs   |    16 |  19 |
-|      0 |       1 | adverse effects |    25 |  27 |
-|      0 |       1 | severe toxicity |    28 |  30 |
+| doc_id | sent_id | nounc        | start | end |
+|-------:|--------:|:-------------|------:|----:|
+|      0 |       0 | Paxlovid     |     0 |   1 |
+|      0 |       0 | a drug       |     2 |   4 |
+|      0 |       0 | nirmatrelvir |     5 |   6 |
+|      0 |       0 | ritonavir    |     7 |   8 |
+|      0 |       0 | the impact   |    31 |  33 |
 
 ### spacy_get_hyponyms
 
@@ -417,18 +388,60 @@ reticulate::py$sp_hearst |>
   slice(1:10) |> knitr::kable()
 ```
 
-| doc_id | pred    | sbj              | obj               |
-|-------:|:--------|:-----------------|:------------------|
-|      2 | include | metabolites      | pigments          |
-|      2 | include | metabolites      | enzymes           |
-|      2 | include | metabolites      | compounds         |
-|      3 | such_as | microbes         | microfungi        |
-|      3 | such_as | microbes         | bacteria          |
-|      3 | such_as | ailments         | cancer            |
-|      3 | such_as | ailments         | malaria           |
-|      3 | such_as | ailments         | diseases          |
-|      5 | such_as | diseases         | cancer            |
-|      6 | include | efficacy effects | lung moisturizing |
+| doc_id | pred       | sbj           | obj                         |
+|-------:|:-----------|:--------------|:----------------------------|
+|      4 | such_as    | immunity      | HIV/AIDS patients           |
+|      4 | such_as    | immunity      | organ transplant recipients |
+|      4 | include    | compounds     | tyrosine kinase inhibitors  |
+|      5 | include    | invertebrates | diuresis                    |
+|      5 | include    | invertebrates | feeding                     |
+|      5 | include    | invertebrates | digestion                   |
+|      5 | especially | metazoans     | humans                      |
+|      9 | include    | metabolites   | pigments                    |
+|      9 | include    | metabolites   | enzymes                     |
+|      9 | include    | metabolites   | compounds                   |
+
+### spacy_get_negation
+
+### spacy_get_sentences
+
+``` python
+def spacy_get_sentences(docs):
+
+    details_dict = {
+      "doc_id": [], 
+      "sent_id": [],
+      "text": []
+      }
+    
+    for ix, doc in enumerate(docs):
+      for sent_i, sent in enumerate(doc.sents):
+        
+        details_dict["doc_id"].append(ix)
+        details_dict["sent_id"].append(sent_i)
+        
+        sentences = str(sent).strip()
+        details_dict["text"].append(sentences)
+    
+      
+    dd =  pd.DataFrame.from_dict(details_dict)     
+    return dd
+  
+sp_sentences = spacy_get_sentences(doc)
+```
+
+``` r
+reticulate::py$sp_sentences |>
+  slice(1:5) |> knitr::kable()
+```
+
+| doc_id | sent_id | text                                                                                                                                                                                                                                                      |
+|--:|---:|:-----------------------------------------------------------------|
+|      0 |       0 | Paxlovid, a drug combining nirmatrelvir and ritonavir, was designed for the treatment of COVID-19 and its rapid development has led to emergency use approval by the FDA to reduce the impact of COVID-19 infection on patients.                          |
+|      0 |       1 | In order to overcome potentially suboptimal therapeutic exposures, nirmatrelvir is dosed in combination with ritonavir to boost the pharmacokinetics of the active product.                                                                               |
+|      0 |       2 | Here we consider examples of drugs co-administered with pharmacoenhancers.                                                                                                                                                                                |
+|      0 |       3 | Pharmacoenhancers have been adopted for multiple purposes such as ensuring therapeutic exposure of the active product, reducing formation of toxic metabolites, changing the route of administration, and increasing the cost-effectiveness of a therapy. |
+|      0 |       4 | We weigh the benefits and risks of this approach, examining the impact of technology developments on drug design and how enhanced integration between cross-discipline teams can improve the outcome of drug discovery.                                   |
 
 ## Medical transcript data
 
@@ -437,33 +450,6 @@ reticulate::py$sp_hearst |>
 ``` r
 mts <- clinspacy::dataset_mtsamples()
 mts_df <- reticulate::r_to_py(mts)
-```
-
-``` python
-def spacy_get_nps(docs):
-
-    details_dict = {
-      "doc_id": [], 
-      "sent_id": [],
-      "nounc": [], 
-      "start": [], 
-      "end": []
-      }
-    
-    for ix, doc in enumerate(docs):
-      for sent_i, sent in enumerate(doc.sents):
-        
-        for nc in sent.noun_chunks:
-          details_dict["doc_id"].append(ix)
-          details_dict["sent_id"].append(sent_i)
-          details_dict["nounc"].append(nc.text)
-          details_dict["start"].append(nc.start)
-          details_dict["end"].append(nc.end)
-    
-    dd =  pd.DataFrame.from_dict(details_dict)     
-    return dd
-  
-sp_noun_phrases = spacy_get_nps(doc)
 ```
 
 ## References
