@@ -1,6 +1,6 @@
 # Some spaCy & scispacy workflows
 
-*Updated: 2022-12-20*
+*Updated: 2022-12-31*
 
 > An attempt at organizing some `spaCy` workflows. Some functions for
 > disentangling `spaCy` output. For working with actual corpora, as
@@ -22,8 +22,6 @@
         -   [Hyponyms](#hyponyms)
         -   [Negation](#negation)
         -   [Sentences](#sentences)
-    -   [Medical transcript data](#medical-transcript-data)
-        -   [medspacy](#medspacy)
     -   [References](#references)
 
 ------------------------------------------------------------------------
@@ -33,12 +31,13 @@
 ``` bash
 conda create -n scispacy python=3.9
 source activate scispacy 
-conda install transformers
+conda install transformers pandas numpy
 
 cd /home/jtimm/anaconda3/envs/scispacy/bin/
 pip install scispacy
 pip install pysbd
 pip install medspacy
+pip install textacy
 pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
 pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.4.0/en_ner_bc5cdr_md-0.4.0.tar.gz
 ```
@@ -53,17 +52,24 @@ reticulate::use_condaenv(condaenv = "scispacy",
                          conda = "/home/jtimm/anaconda3/bin/conda")
 ```
 
+``` python
+import sys
+#print(sys.path)
+sys.path.append('../home/jtimm/pCloudDrive/GitHub/git-projects/spacy-nlp')
+import spacyHelp
+```
+
 ## PubMed abstracts
 
 ``` r
-dd <- pubmedr::pmed_search_pubmed(search_term = 'drug discovery', 
+dd <- pubmedr::pmed_search_pubmed(search_term = 'political ideology', 
                                   fields = c('TIAB','MH'))
 ```
 
-    ## [1] "drug discovery[TIAB] OR drug discovery[MH]: 9999 records"
+    ## [1] "political ideology[TIAB] OR political ideology[MH]: 639 records"
 
 ``` r
-dd.df <- pubmedr::pmed_get_records2(pmids = unique(dd$pmid)[1:100], 
+dd.df <- pubmedr::pmed_get_records2(pmids = unique(dd$pmid)[1:200], 
                                     with_annotations = F)[[1]] |>
   filter(!is.na(abstract))
 
@@ -135,56 +141,7 @@ doc = list(nlp.pipe(texts))
 ### Standard annotation
 
 ``` python
-def extract_df(doc:spacy.tokens.doc.Doc):
-
-    return [
-        (
-          i.text,
-          i.i, 
-          i.is_sent_start,
-          i.lemma_, 
-          i.ent_type_, 
-          i.tag_, 
-          i.dep_, 
-          i.pos_,
-          i.is_stop, 
-          i.is_alpha, 
-          i.is_digit, 
-          i.is_punct
-          ) for i in doc
-    ]
-    
-#####    
-def spacy_get_df(docs):
-    
-    cols = [
-        "doc_id", 
-        "token", 
-        "token_order", 
-        "sent_id",
-        "lemma", 
-        "ent_type", 
-        "tag", 
-        "dep", 
-        "pos", 
-        "is_stop", 
-        "is_alpha", 
-        "is_digit", 
-        "is_punct"
-    ]
-    
-    meta_df = []
-    for ix, doc in enumerate(docs):
-        meta = extract_df(doc)
-        meta = pd.DataFrame(meta)
-        meta.columns = cols[1:]
-        meta = meta.assign(doc_id = ix).loc[:, cols]
-        meta.sent_id = meta.sent_id.astype(bool).cumsum() - 1
-        meta_df.append(meta)
-        
-    return pd.concat(meta_df)   
-  
-sp_df = spacy_get_df(doc)
+sp_df = spacyHelp.spacy_get_df(doc)
 ```
 
 ``` r
@@ -192,60 +149,18 @@ reticulate::py$sp_df |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | token     | token_order | sent_id | lemma    | ent_type | tag | dep       | pos   | is_stop | is_alpha | is_digit | is_punct |
-|----:|:------|-------:|-----:|:-----|:-----|:---|:------|:----|:-----|:-----|:-----|:-----|
-|      0 | Paxlovid  |           0 |       0 | Paxlovid |          | NNP | nsubjpass | PROPN | FALSE   | TRUE     | FALSE    | FALSE    |
-|      0 | ,         |           1 |       0 | ,        |          | ,   | punct     | PUNCT | FALSE   | FALSE    | FALSE    | TRUE     |
-|      0 | a         |           2 |       0 | a        |          | DT  | det       | DET   | TRUE    | TRUE     | FALSE    | FALSE    |
-|      0 | drug      |           3 |       0 | drug     |          | NN  | appos     | NOUN  | FALSE   | TRUE     | FALSE    | FALSE    |
-|      0 | combining |           4 |       0 | combine  |          | VBG | acl       | VERB  | FALSE   | TRUE     | FALSE    | FALSE    |
+| doc_id | token       | token_order | sent_id | lemma       | ent_type | tag | dep   | pos  | is_stop | is_alpha | is_digit | is_punct |
+|----:|:-------|-------:|-----:|:-------|:-----|:---|:----|:---|:-----|:-----|:-----|:-----|
+|      0 | Previous    |           0 |       0 | previous    |          | JJ  | amod  | ADJ  | FALSE   | TRUE     | FALSE    | FALSE    |
+|      0 | attitudinal |           1 |       0 | attitudinal |          | JJ  | amod  | ADJ  | FALSE   | TRUE     | FALSE    | FALSE    |
+|      0 | studies     |           2 |       0 | study       |          | NNS | nsubj | NOUN | FALSE   | TRUE     | FALSE    | FALSE    |
+|      0 | on          |           3 |       0 | on          |          | IN  | case  | ADP  | TRUE    | TRUE     | FALSE    | FALSE    |
+|      0 | immigration |           4 |       0 | immigration |          | NN  | nmod  | NOUN | FALSE   | TRUE     | FALSE    | FALSE    |
 
 ### Entities & linking
 
 ``` python
-def spacy_get_entities(docs):
-
-    entity_details_dict = {
-      "doc_id": [], 
-      "sent_id": [], 
-      "ent_text": [],
-      "ent_label": [], 
-      "cui": [], 
-      "descriptor": [], 
-      "score": [], 
-      "ent_start": [], 
-      "ent_end": []
-      }
-    
-    for ix, doc in enumerate(docs):
-      for sent_i, sent in enumerate(doc.sents):
-
-        for ent in sent.ents:
-          entity_details_dict["doc_id"].append(ix)
-          entity_details_dict["sent_id"].append(sent_i)
-          entity_details_dict["ent_text"].append(ent.text)
-          entity_details_dict["ent_label"].append(ent.label_)
-          
-          if len(ent._.kb_ents) == 0:
-            entity_details_dict["cui"].append('')
-            entity_details_dict["descriptor"].append('')
-            entity_details_dict["score"].append('')
-          else:
-            score = round(ent._.kb_ents[0][1], 2)
-            cui = ent._.kb_ents[0][0]
-            descriptor = linker.umls.cui_to_entity[ent._.kb_ents[0][0]][1]
-            entity_details_dict["cui"].append(cui)
-            entity_details_dict["descriptor"].append(descriptor)
-            entity_details_dict["score"].append(score)
-            
-          entity_details_dict["ent_start"].append(ent.start)
-          entity_details_dict["ent_end"].append(ent.end)
-          
-    dd = pd.DataFrame.from_dict(entity_details_dict)
-        
-    return dd
-  
-sp_entities = spacy_get_entities(doc)
+sp_entities = spacyHelp.spacy_get_entities(doc)
 ```
 
 ``` r
@@ -253,88 +168,43 @@ reticulate::py$sp_entities |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | sent_id | ent_text           | ent_label | cui      | descriptor | score | ent_start | ent_end |
-|-----:|------:|:--------------|:--------|:-------|:--------|:-----|--------:|------:|
-|      0 |       0 | nirmatrelvir       | CHEMICAL  |          |            |       |         5 |       6 |
-|      0 |       0 | ritonavir          | CHEMICAL  | C0292818 | ritonavir  | 1     |         7 |       8 |
-|      0 |       0 | COVID-19           | CHEMICAL  | C5203670 | COVID-19   | 1     |        15 |      16 |
-|      0 |       0 | COVID-19 infection | DISEASE   |          |            |       |        34 |      36 |
-|      0 |       1 | nirmatrelvir       | CHEMICAL  |          |            |       |        48 |      49 |
+| doc_id | sent_id | entity             | label   | start | end | start_char | end_char |
+|-------:|--------:|:-----------------|:--------|------:|----:|----------:|--------:|
+|      2 |       1 | pandemic           | DISEASE |    40 |  41 |        247 |      255 |
+|      2 |       1 | pandemic           | DISEASE |    54 |  55 |        339 |      347 |
+|      2 |       4 | pandemic           | DISEASE |   144 | 145 |        888 |      896 |
+|      3 |       0 | vehicular homicide | DISEASE |    21 |  23 |        131 |      149 |
+|      3 |       1 | vehicular homicide | DISEASE |    36 |  38 |        246 |      264 |
 
 ### Abbreviations
 
 ``` python
-def spacy_get_abbrevs(docs):
-
-    details_dict = {
-      "doc_id": [], 
-      "abrv": [], 
-      "start": [], 
-      "end": [], 
-      "long_form": []
-      }
-    
-    for ix, doc in enumerate(docs):
-      
-      for ab in doc._.abbreviations:
-        details_dict["doc_id"].append(ix)
-        details_dict["abrv"].append(ab.text)
-        details_dict["start"].append(ab.start)
-        details_dict["end"].append(ab.end)
-        lf = ' '.join(map(str, ab._.long_form))
-        details_dict["long_form"].append(lf)
-        
-    dd = pd.DataFrame.from_dict(details_dict)
-    return dd
-  
-sp_abbrevs = spacy_get_abbrevs(doc)
+sp_abbrevs = spacyHelp.spacy_get_abbrevs(doc)
 ```
 
 ``` r
 reticulate::py$sp_abbrevs |>
+  distinct(abrv, .keep_all = T) |>
   slice(1:10) |> knitr::kable()
 ```
 
-| doc_id | abrv    | start | end | long_form                                     |
-|-------:|:--------|------:|----:|:----------------------------------------------|
-|      1 | NTD     |     8 |   9 | neglected tropical disease                    |
-|      1 | LiMetRS |   100 | 101 | Leishmania infantum methionyl-tRNA synthetase |
-|      1 | LiMetRS |    58 |  59 | Leishmania infantum methionyl-tRNA synthetase |
-|      1 | LiMetRS |   251 | 252 | Leishmania infantum methionyl-tRNA synthetase |
-|      5 | GPCRs   |   109 | 110 | G protein-coupled receptors                   |
-|      5 | GPCRs   |   134 | 135 | G protein-coupled receptors                   |
-|      5 | GPCRs   |     4 |   5 | G protein-coupled receptors                   |
-|      5 | GPCRs   |   149 | 150 | G protein-coupled receptors                   |
-|      5 | GPCRs   |    60 |  61 | G protein-coupled receptors                   |
-|      5 | GPCRs   |   311 | 312 | G protein-coupled receptors                   |
+| doc_id | abrv     | start | end | long_form                                  |
+|-------:|:---------|------:|----:|:-------------------------------------------|
+|      0 | PRRI     |    54 |  55 | Public Religion Research Institute         |
+|      7 | study    |    39 |  40 | Study 1 : N =   47,951                     |
+|      8 | VA       |    26 |  27 | Veterans Administration                    |
+|     13 | PMIE     |    60 |  61 | potentially morally injurious events       |
+|     17 | COVID-19 |    10 |  11 | Coronavirus disease 2019                   |
+|     18 | CDC      |    76 |  77 | Centers for Disease Control and Prevention |
+|     23 | NAM      |    14 |  15 | norm activation model                      |
+|     24 | WVS      |    68 |  69 | World Values Survey                        |
+|     25 | IPV      |    69 |  70 | intimate partner violence                  |
+|     34 | HICs     |     4 |   5 | high-income countries                      |
 
 ### Noun phrases
 
 ``` python
-def spacy_get_nps(docs):
-
-    details_dict = {
-      "doc_id": [], 
-      "sent_id": [],
-      "nounc": [], 
-      "start": [], 
-      "end": []
-      }
-    
-    for ix, doc in enumerate(docs):
-      for sent_i, sent in enumerate(doc.sents):
-        
-        for nc in sent.noun_chunks:
-          details_dict["doc_id"].append(ix)
-          details_dict["sent_id"].append(sent_i)
-          details_dict["nounc"].append(nc.text)
-          details_dict["start"].append(nc.start)
-          details_dict["end"].append(nc.end)
-    
-    dd =  pd.DataFrame.from_dict(details_dict)     
-    return dd
-  
-sp_noun_phrases = spacy_get_nps(doc)
+sp_noun_phrases = spacyHelp.spacy_get_nps(doc)
 ```
 
 ``` r
@@ -342,42 +212,18 @@ reticulate::py$sp_noun_phrases |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | sent_id | nounc        | start | end |
-|-------:|--------:|:-------------|------:|----:|
-|      0 |       0 | Paxlovid     |     0 |   1 |
-|      0 |       0 | a drug       |     2 |   4 |
-|      0 |       0 | nirmatrelvir |     5 |   6 |
-|      0 |       0 | ritonavir    |     7 |   8 |
-|      0 |       0 | the impact   |    31 |  33 |
+| doc_id | sent_id | nounc                        | start | end |
+|-------:|--------:|:-----------------------------|------:|----:|
+|      0 |       0 | Previous attitudinal studies |     0 |   3 |
+|      0 |       0 | immigration policies         |    19 |  21 |
+|      0 |       1 | The dearth                   |    22 |  24 |
+|      0 |       1 | the present study            |    31 |  34 |
+|      0 |       2 | individual-level data        |    37 |  39 |
 
 ### Hyponyms
 
 ``` python
-def spacy_get_hyponyms(docs):
-
-    details_dict = {
-      "doc_id": [], 
-      "pred": [], 
-      "sbj": [], 
-      "obj": []
-      }
-    
-    for ix, doc in enumerate(docs):
-      
-      for ht in doc._.hearst_patterns:
-        details_dict["doc_id"].append(ix)
-        details_dict["pred"].append(ht[0])
-        
-        sbj = ' '.join(map(str, ht[1]))
-        obj = ' '.join(map(str, ht[2]))
-        
-        details_dict["sbj"].append(sbj)
-        details_dict["obj"].append(obj)
-    
-    dd =  pd.DataFrame.from_dict(details_dict)     
-    return dd
-  
-sp_hearst = spacy_get_hyponyms(doc)
+sp_hearst = spacyHelp.spacy_get_hyponyms(doc)
 ```
 
 ``` r
@@ -385,43 +231,25 @@ reticulate::py$sp_hearst |>
   slice(1:10) |> knitr::kable()
 ```
 
-| doc_id | pred       | sbj           | obj                         |
-|-------:|:-----------|:--------------|:----------------------------|
-|      4 | such_as    | immunity      | HIV/AIDS patients           |
-|      4 | such_as    | immunity      | organ transplant recipients |
-|      4 | include    | compounds     | tyrosine kinase inhibitors  |
-|      5 | include    | invertebrates | diuresis                    |
-|      5 | include    | invertebrates | feeding                     |
-|      5 | include    | invertebrates | digestion                   |
-|      5 | especially | metazoans     | humans                      |
-|      9 | include    | metabolites   | pigments                    |
-|      9 | include    | metabolites   | enzymes                     |
-|      9 | include    | metabolites   | compounds                   |
+| doc_id | pred    | sbj     | obj               |
+|-------:|:--------|:--------|:------------------|
+|      0 | other   | factors | states            |
+|      0 | such_as | factors | age               |
+|      0 | such_as | factors | ideology          |
+|      0 | such_as | factors | party affiliation |
+|      0 | such_as | factors | region            |
+|      6 | such_as | factors | effort            |
+|      6 | such_as | factors | favoritism        |
+|      6 | such_as | factors | discrimination    |
+|     10 | include | survey  | items             |
+|     10 | include | survey  | sources           |
 
 ### Negation
 
 ### Sentences
 
 ``` python
-def spacy_get_sentences(docs):
-
-    details_dict = {
-      "doc_id": [], 
-      "sent_id": [],
-      "text": []
-      }
-    
-    for ix, doc in enumerate(docs):
-      for sent_i, sent in enumerate(doc.sents):
-        details_dict["doc_id"].append(ix)
-        details_dict["sent_id"].append(sent_i)
-        sentences = str(sent).strip()
-        details_dict["text"].append(sentences)
-    
-    dd =  pd.DataFrame.from_dict(details_dict)     
-    return dd
-  
-sp_sentences = spacy_get_sentences(doc)
+sp_sentences = spacyHelp.spacy_get_sentences(doc)
 ```
 
 ``` r
@@ -429,96 +257,13 @@ reticulate::py$sp_sentences |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | sent_id | text                                                                                                                                                                                                                                                      |
+| doc_id | sent_id | text                                                                                                                                                                                                                                                             |
 |--:|---:|:-----------------------------------------------------------------|
-|      0 |       0 | Paxlovid, a drug combining nirmatrelvir and ritonavir, was designed for the treatment of COVID-19 and its rapid development has led to emergency use approval by the FDA to reduce the impact of COVID-19 infection on patients.                          |
-|      0 |       1 | In order to overcome potentially suboptimal therapeutic exposures, nirmatrelvir is dosed in combination with ritonavir to boost the pharmacokinetics of the active product.                                                                               |
-|      0 |       2 | Here we consider examples of drugs co-administered with pharmacoenhancers.                                                                                                                                                                                |
-|      0 |       3 | Pharmacoenhancers have been adopted for multiple purposes such as ensuring therapeutic exposure of the active product, reducing formation of toxic metabolites, changing the route of administration, and increasing the cost-effectiveness of a therapy. |
-|      0 |       4 | We weigh the benefits and risks of this approach, examining the impact of technology developments on drug design and how enhanced integration between cross-discipline teams can improve the outcome of drug discovery.                                   |
-
-## Medical transcript data
-
-> Data from R package `clinspacy` via <https://mtsamples.com/>
-
-``` r
-mts <- clinspacy::dataset_mtsamples()
-mts_df <- reticulate::r_to_py(mts)
-```
-
-### medspacy
-
-``` python
-# jupyter-notebook
-import medspacy
-# nlp = spacy.load("en_core_sci_sm")
-nlp = medspacy.load("en_core_sci_sm", disable = {'medspacy_target_matcher', 'medspacy_pyrush'})
-nlp.add_pipe("sentencizer", first = True)
-```
-
-    ## <spacy.pipeline.sentencizer.Sentencizer object at 0x7ff0b948e500>
-
-``` python
-sectionizer = nlp.add_pipe("medspacy_sectionizer")
-print(nlp.pipe_names)
-```
-
-    ## ['sentencizer', 'tok2vec', 'tagger', 'attribute_ruler', 'lemmatizer', 'parser', 'ner', 'medspacy_context', 'medspacy_sectionizer']
-
-``` python
-texts0 = list(r.mts_df['transcription'][1:100])
-doc = list(nlp.pipe(texts0))
-```
-
-``` python
-#  is_negated
-#  is_uncertain
-#  is_historical
-#  is_family
-#  is_hypothetical
-
-def spacy_get_transcripts(docs):
-
-    details_dict = {
-      "doc_id": [], 
-      "sent_id": [],
-      "section_category": [],
-      "entity": [], 
-      "is_historical": [],
-      "start": [], 
-      "end": []
-      }
-    
-    for ix, doc in enumerate(docs):
-      for sent_i, sent in enumerate(doc.sents):
-        
-        for ent in sent.ents:
-          details_dict["doc_id"].append(ix)
-          details_dict["sent_id"].append(sent_i)
-          details_dict["section_category"].append(ent._.section_category)
-          details_dict["entity"].append(ent.text)
-          details_dict["is_historical"].append(ent._.is_historical)
-          details_dict["start"].append(ent.start)
-          details_dict["end"].append(ent.end)
-    
-    dd =  pd.DataFrame.from_dict(details_dict)     
-    return dd
-  
-sp_transcripts = spacy_get_transcripts(doc)
-```
-
-``` r
-reticulate::py$sp_transcripts |>
-  slice(1:5) |> knitr::kable()
-```
-
-| doc_id | sent_id | section_category     | entity              | is_historical | start | end |
-|------:|-------:|:-----------------|:-----------------|:------------|-----:|----:|
-|      0 |       0 | past_medical_history | PAST                | TRUE          |     0 |   1 |
-|      0 |       0 | past_medical_history | difficulty climbing | TRUE          |     7 |   9 |
-|      0 |       0 | past_medical_history | difficulty          | TRUE          |    11 |  12 |
-|      0 |       0 | past_medical_history | airline seats       | TRUE          |    13 |  15 |
-|      0 |       0 | past_medical_history | tying shoes         | TRUE          |    16 |  18 |
+|      0 |       0 | Previous attitudinal studies on immigration in the USA largely focus on the predictors of anti-immigration sentiments compared to examining immigration policies.                                                                                                |
+|      0 |       1 | The dearth of scientific enquiry about the latter necessitated the present study.                                                                                                                                                                                |
+|      0 |       2 | By analyzing individual-level data (n = 1018) obtained from the Public Religion Research Institute (PRRI), we assess the effect of geopolitics-red and blue states and other factors on public attitude towards six immigration policies in the USA (2017-2021). |
+|      0 |       3 | Overall, the results indicate a null relationship between geopolitics and public attitude towards immigration policies.                                                                                                                                          |
+|      0 |       4 | Additionally, we observed several sociodemographic factors, such as age, political ideology, party affiliation, and region, influence public attitude towards immigration policies.                                                                              |
 
 ## References
 
