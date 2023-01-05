@@ -216,13 +216,16 @@ reticulate::py$sp_df |>
 ### Entities & linking
 
 ```{python}
-sp_entities = spacyHelp.spacy_get_entities(doc, link = True, linker = linker)
+sp_entities = spacyHelp.spacy_get_entities(
+  doc, 
+  link = True, 
+  linker = linker)
 ```
 
 
 ```{r message=FALSE, warning=FALSE}
 reticulate::py$sp_entities |>
-  slice(1:10) |> knitr::kable()
+  sample_n(15) |> knitr::kable()
 ```
 
 
@@ -288,7 +291,7 @@ sp_sentences = spacyHelp.spacy_get_sentences(doc)
 
 ```{r}
 reticulate::py$sp_sentences |>
-  slice(1:5) |> knitr::kable()
+  sample_n(7) |> knitr::kable()
 ```
 
 
