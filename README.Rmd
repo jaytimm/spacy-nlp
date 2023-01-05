@@ -21,22 +21,6 @@ source("/home/jtimm/pCloudDrive/GitHub/packages/render_toc.R")
 ---
 
 
-```{r eval=FALSE, include=FALSE}
-# https://explosion.ai/blog/healthsea
-# incredible -- 
-# 
-# # nlp with spacy
-# 
-# * negation -- also, see `medspacy` -- see `spacy-lookup` -- pip install spacy-lookup
-# 
-# * m7 package, drugs and dosages  --
-# 
-# * custom linkers
-# 
-# NER model types available at:
-# https://allenai.github.io/scispacy/
-```
-
 
 ```{r echo=FALSE}
 render_toc(filename = "/home/jtimm/pCloudDrive/GitHub/git-projects/spacy-nlp/README.Rmd",
@@ -66,6 +50,8 @@ pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.4.0/e
 
 
 
+## Reticulate
+
 ```{r message=FALSE, warning=FALSE}
 ## <R-console>
 library(dplyr)
@@ -74,14 +60,6 @@ library(reticulate)
 #reticulate::use_python("/home/jtimm/anaconda3/envs/m3demo/bin/python")
 reticulate::use_condaenv(condaenv = "scispacy",
                          conda = "/home/jtimm/anaconda3/bin/conda")
-```
-
-
-```{python}
-import sys
-#print(sys.path)
-sys.path.append('../home/jtimm/pCloudDrive/GitHub/git-projects/spacy-nlp')
-import spacyHelp
 ```
 
 
@@ -131,6 +109,14 @@ doc = list(nlp.pipe(texts))
 
 
 ## Libraries
+
+```{python}
+import sys
+#print(sys.path)
+sys.path.append('../home/jtimm/pCloudDrive/GitHub/git-projects/spacy-nlp')
+import spacyHelp
+```
+
 
 ```{python eval=FALSE}
 import pandas as pd
@@ -270,6 +256,7 @@ sp_hearst = spacyHelp.spacy_get_hyponyms(doc)
 
 ```{r}
 reticulate::py$sp_hearst |>
+  select(doc_id, sbj, pred, obj) |>
   sample_n(15) |> knitr::kable()
 ```
 

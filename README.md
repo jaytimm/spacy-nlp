@@ -9,6 +9,7 @@
 
 -   [Some spaCy & scispacy workflows](#some-spacy-&-scispacy-workflows)
     -   [Conda environment](#conda-environment)
+    -   [Reticulate](#reticulate)
     -   [PubMed abstracts](#pubmed-abstracts)
     -   [Libraries](#libraries)
         -   [Scispacy components](#scispacy-components)
@@ -41,6 +42,8 @@ pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/e
 pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.4.0/en_ner_bc5cdr_md-0.4.0.tar.gz
 ```
 
+## Reticulate
+
 ``` r
 ## <R-console>
 library(dplyr)
@@ -49,13 +52,6 @@ library(reticulate)
 #reticulate::use_python("/home/jtimm/anaconda3/envs/m3demo/bin/python")
 reticulate::use_condaenv(condaenv = "scispacy",
                          conda = "/home/jtimm/anaconda3/bin/conda")
-```
-
-``` python
-import sys
-#print(sys.path)
-sys.path.append('../home/jtimm/pCloudDrive/GitHub/git-projects/spacy-nlp')
-import spacyHelp
 ```
 
 ## PubMed abstracts
@@ -76,6 +72,13 @@ df <- reticulate::r_to_py(dd.df)
 ```
 
 ## Libraries
+
+``` python
+import sys
+#print(sys.path)
+sys.path.append('../home/jtimm/pCloudDrive/GitHub/git-projects/spacy-nlp')
+import spacyHelp
+```
 
 ``` python
 import pandas as pd
@@ -173,23 +176,23 @@ reticulate::py$sp_entities |>
   sample_n(15) |> knitr::kable()
 ```
 
-| doc_id | sent_id | entity                          | label    | start | end | start_char | end_char | uid     | descriptor              | score |
-|----:|----:|:----------------|:-----|---:|--:|------:|-----:|:----|:------------|:---|
-|    182 |       0 | polyuria                        | DISEASE  |    35 |  36 |        178 |      186 | D011141 | Polyuria                | 1     |
-|     24 |      12 | dementia                        | DISEASE  |   284 | 285 |       1659 |     1667 | D003704 | Dementia                | 1     |
-|    181 |       0 | dementias                       | DISEASE  |     9 |  10 |         68 |       77 | D003704 | Dementia                | 0.78  |
-|    166 |       9 | Alzheimer’s disease             | DISEASE  |   250 | 251 |       1566 |     1585 | D000544 | Alzheimer Disease       | 1     |
-|    149 |       3 | PD                              | DISEASE  |   135 | 136 |        938 |      940 |         |                         |       |
-|    181 |       2 | dementia                        | DISEASE  |    71 |  72 |        494 |      502 | D003704 | Dementia                | 1     |
-|    102 |       3 | ARIA                            | DISEASE  |    82 |  83 |        539 |      543 |         |                         |       |
-|     37 |       1 | learning and memory impairments | DISEASE  |    31 |  32 |        212 |      243 |         |                         |       |
-|    109 |       3 | dementia                        | DISEASE  |   112 | 113 |        732 |      740 | D003704 | Dementia                | 1     |
-|    151 |       5 | GLP-1                           | CHEMICAL |   235 | 236 |       1573 |     1578 | D052216 | Glucagon-Like Peptide 1 | 1     |
-|    113 |      12 | dementia                        | DISEASE  |   268 | 269 |       1555 |     1563 | D003704 | Dementia                | 1     |
-|    192 |       0 | Brain diseases                  | DISEASE  |     0 |   1 |          0 |       14 | D001927 | Brain Diseases          | 1     |
-|    147 |       6 | CISD2                           | CHEMICAL |   164 | 165 |       1017 |     1022 | D007506 | Iron-Sulfur Proteins    | 0.73  |
-|     88 |      13 | thymine                         | CHEMICAL |   338 | 339 |       1696 |     1703 | D013941 | Thymine                 | 1     |
-|     57 |       6 | stroke                          | DISEASE  |   208 | 209 |       1260 |     1266 | D020521 | Stroke                  | 1     |
+| doc_id | sent_id | entity                                                     | label    | start | end | start_char | end_char | uid     | descriptor            | score |
+|---:|----:|:------------------------|:----|---:|--:|-----:|----:|:----|:---------|:---|
+|     88 |       1 | metabolomic abnormalities                                  | DISEASE  |    38 |  39 |        208 |      233 |         |                       |       |
+|    100 |       9 | AD                                                         | DISEASE  |   167 | 168 |       1069 |     1071 | D000544 | Alzheimer Disease     | 1     |
+|     31 |       8 | MCI                                                        | DISEASE  |   215 | 216 |       1300 |     1303 | D060825 | Cognitive Dysfunction | 1     |
+|    140 |       1 | infections                                                 | DISEASE  |    24 |  25 |        200 |      210 | D007239 | Infections            | 1     |
+|     89 |       8 | Aβ1                                                        | CHEMICAL |   353 | 354 |       2008 |     2011 |         |                       |       |
+|    171 |       1 | dengue fever                                               | DISEASE  |    37 |  38 |        225 |      237 | D003715 | Dengue                | 1     |
+|     91 |       8 | dementia                                                   | DISEASE  |   152 | 153 |        967 |      975 | D003704 | Dementia              | 1     |
+|    103 |       0 | Alzheimer’s disease                                        | DISEASE  |    24 |  25 |        193 |      212 | D000544 | Alzheimer Disease     | 1     |
+|     94 |       3 | neurological progressive diseases like Alzheimer’s disease | DISEASE  |   102 | 103 |        631 |      689 | D000544 | Alzheimer Disease     | 0.74  |
+|    189 |       1 | post-amplifier                                             | CHEMICAL |    92 |  93 |        549 |      563 |         |                       |       |
+|    128 |       4 | MCI                                                        | DISEASE  |   110 | 111 |        768 |      771 | D060825 | Cognitive Dysfunction | 1     |
+|     87 |       8 | dementia                                                   | DISEASE  |   225 | 226 |       1424 |     1432 | D003704 | Dementia              | 1     |
+|     12 |       6 | MDA                                                        | CHEMICAL |   149 | 150 |        963 |      966 | D008315 | Malondialdehyde       | 1     |
+|    143 |       3 | Alzheimer’s disease                                        | DISEASE  |    74 |  75 |        451 |      470 | D000544 | Alzheimer Disease     | 1     |
+|     36 |       7 | TCM                                                        | DISEASE  |   152 | 153 |       1026 |     1029 |         |                       |       |
 
 ### Abbreviations
 
@@ -203,23 +206,23 @@ reticulate::py$sp_abbrevs |>
   sample_n(15) |> knitr::kable()
 ```
 
-| doc_id | abrv     | start | end | long_form                                                                                                                              |
-|---:|:----|---:|--:|:--------------------------------------------------------|
-|     38 | N-TIPS   |    19 |  20 | non-solvent-induced phase separation                                                                                                   |
-|     25 | TCQ      |   152 | 153 | Tai Chi Quan                                                                                                                           |
-|     43 | AEs      |   181 | 182 | adverse events                                                                                                                         |
-|     81 | DSP      |   161 | 162 | digit span test                                                                                                                        |
-|      9 | iPSCs    |   149 | 150 | induced pluripotent stem cells                                                                                                         |
-|     94 | TEPs     |   214 | 215 | transcranial evoked potentials                                                                                                         |
-|     10 | SNF      |     6 |   7 | skilled nursing facilities                                                                                                             |
-|     90 | VB12     |   115 | 116 | Vitamin B12                                                                                                                            |
-|     29 | NSCs     |   255 | 256 | neural stem cells                                                                                                                      |
-|    127 | ENS      |   190 | 191 | enteric nervous system                                                                                                                 |
-|    151 | autism   |   215 | 216 | neurodegenerative (Alzheimer’s, Parkinson’s), neuropsychiatric (depression , PTSD , schizophrenia ) , and neurodevelopmental disorders |
-|    144 | gLFC     |    92 |  93 | Global left frontal cortex                                                                                                             |
-|    141 | IVIG     |   300 | 301 | intravenous immunoglobulin                                                                                                             |
-|    135 | PHG      |   198 | 199 | parahippocampal gyrus                                                                                                                  |
-|    136 | ADAS-cog |   145 | 146 | assessment scale-cognitive subscale                                                                                                    |
+| doc_id | abrv  | start | end | long_form                                 |
+|-------:|:------|------:|----:|:------------------------------------------|
+|     52 | FFI   |   162 | 163 | Fitness Fatness Index                     |
+|    140 | GDS   |   202 | 203 | Geriatric Depression Scale                |
+|    127 | FMT   |   153 | 154 | fecal microbiota transplantation          |
+|     81 | DSP   |   161 | 162 | digit span test                           |
+|     29 | BDNF  |   221 | 222 | (IGF-1)/brain-derived neurotrophic factor |
+|    174 | RACFs |    55 |  56 | residential aged care facilities          |
+|    141 | IVIG  |   191 | 192 | intravenous immunoglobulin                |
+|     63 | GTN   |   166 | 167 | gastrocnemius                             |
+|     29 | AHN   |   155 | 156 | adult hippocampal neurogenesis            |
+|    170 | DASH  |    97 |  98 | Dietary Approaches to Stop Hypertension   |
+|     92 | CSF   |     4 |   5 | cerebrospinal fluid                       |
+|     52 | METs  |   171 | 172 | metabolic equivalents                     |
+|     52 | CRF   |    54 |  55 | cardiorespiratory fitness                 |
+|    101 | CCI   |   312 | 313 | Charlson Comorbidity Index                |
+|    103 | TFEB  |   354 | 355 | transcription factor EB                   |
 
 ### Noun phrases
 
@@ -232,18 +235,18 @@ reticulate::py$sp_noun_phrases |>
   sample_n(10) |> knitr::kable()
 ```
 
-| doc_id | sent_id | nounc                        | start | end |
-|-------:|--------:|:-----------------------------|------:|----:|
-|    150 |       5 | mindfulness                  |   203 | 204 |
-|    118 |       8 | support                      |   208 | 209 |
-|    114 |      12 | Telehealth                   |   346 | 347 |
-|    116 |      15 | Family carers                |   328 | 330 |
-|     24 |      13 | adherence                    |   330 | 331 |
-|     67 |       4 | light stability              |   127 | 129 |
-|     12 |       8 | a high entrapment efficiency |   218 | 222 |
-|     13 |       2 | the history                  |    52 |  54 |
-|     98 |       1 | (PwD                         |    54 |  56 |
-|    111 |       1 | an increased risk            |    37 |  40 |
+| doc_id | sent_id | nounc                   | start | end |
+|-------:|--------:|:------------------------|------:|----:|
+|     92 |       9 | Hypnosis                |   169 | 170 |
+|    172 |      11 | the implementation      |   274 | 276 |
+|    168 |       3 | The models              |   117 | 119 |
+|    173 |       6 | (MS                     |    98 | 100 |
+|    121 |       6 | the accuracy            |   210 | 212 |
+|     75 |       6 | that exercise           |   167 | 169 |
+|    186 |       5 | The common feature      |   136 | 139 |
+|     91 |      11 | areas                   |   216 | 217 |
+|    193 |       4 | precuneus               |   103 | 104 |
+|    148 |       8 | the blood-brain barrier |   238 | 241 |
 
 ### Hyponyms
 
@@ -255,26 +258,27 @@ sp_hearst = spacyHelp.spacy_get_hyponyms(doc)
 
 ``` r
 reticulate::py$sp_hearst |>
+  select(doc_id, sbj, pred, obj) |>
   sample_n(15) |> knitr::kable()
 ```
 
-| doc_id | pred    | sbj                        | obj                         |
-|-------:|:--------|:---------------------------|:----------------------------|
-|     99 | include | neurodegenerative diseases | neuroinflammation           |
-|    171 | such_as | viral diseases             | MERS                        |
-|    127 | include | parameters                 | weight                      |
-|    182 | such_as | database                   | Wanfang Data                |
-|     21 | include | parameters                 | T1/2                        |
-|     93 | such_as | variables                  | history                     |
-|    127 | include | parameters                 | morphology                  |
-|    155 | include | diseases                   | cancer                      |
-|    182 | such_as | database                   | Pubmed                      |
-|    164 | other   | groups                     | TKRP                        |
-|    110 | such_as | attention                  | medication management       |
-|    120 | include | dementia development       | Alzheimers disease          |
-|    161 | such_as | neurovascular diseases     | stroke                      |
-|    155 | include | diseases                   | neurodegenerative disorders |
-|    182 | such_as | database                   | CNKI                        |
+| doc_id | sbj                                    | pred       | obj                      |
+|------:|:--------------------------------|:---------|:---------------------|
+|    192 | Brain diseases                         | include    | etc                      |
+|     95 | neurodegenerative diseases             | other      | Parkinson’s disease      |
+|    126 | phytonutrients                         | such_as    | antioxidants             |
+|     93 | variables                              | such_as    | factors                  |
+|     67 | Central nervous system (CNS) diseases  | include    | strokes                  |
+|     53 | Candidate predictors                   | include    | conditions               |
+|    171 | viral diseases                         | such_as    | mumps                    |
+|    104 | waste                                  | include    | Aβ                       |
+|     40 | neurological and psychiatric disorders | include    | autism spectrum disorder |
+|    126 | phytonutrients                         | such_as    | vitamins                 |
+|    104 | fluid transport                        | especially | ISF exchange             |
+|    110 | attention                              | such_as    | medication management    |
+|     93 | variables                              | such_as    | sex                      |
+|    101 | covariates                             | include    | histology stage          |
+|     33 | outcomes                               | include    | volume                   |
 
 ### Negation
 
@@ -289,15 +293,15 @@ reticulate::py$sp_sentences |>
   sample_n(7) |> knitr::kable()
 ```
 
-| doc_id | sent_id | text                                                                                                                                                                                                             |
-|---:|---:|:----------------------------------------------------------------|
-|    169 |       5 | Outcomes were measured at baseline and post-treatment.                                                                                                                                                           |
-|    144 |       6 | Thirty-one prodromal AD patients were divided into low connection group (LCG) and high connection group (HCG) by the median of gLFC connectivity.                                                                |
-|    103 |       1 | Fifty two male APP/PS1 double transgenic AD mice were randomly divided into model, Moxi, Moxi+inhibitor and medication (rapamycin) groups, with 13 mice in each group.                                           |
-|     66 |       1 | A total of 46 patients diagnosed with AD between June 1, 2020 and December 31, 2021 were randomized to undergo either 20 Hz rTMS treatment of the left dorsolateral prefrontal cortex (DLPFC) or sham procedure. |
-|    145 |      12 | Furthermore, chronotherapy of VRP administration should be consider to achieve best therapeutic efficacy.                                                                                                        |
-|    130 |       1 | As therapeutic recourse stagnates, neurodegenerative diseases will cost over a trillion dollars by 2050.                                                                                                         |
-|      5 |       5 | A total of 8 different randomized controlled trials with a total sample of 562 non-overlap Alzheimer disease patients between 50-90 years and a mean age of 75.2 ± 3.9 years were eligible for analyses.         |
+| doc_id | sent_id | text                                                                                                                                                                                                                                                                                                                                                              |
+|--:|--:|:------------------------------------------------------------------|
+|      3 |       2 | The trial comprises a 12-month double-blind, placebo-controlled phase followed by a 12-month modified delayed-start open-label treatment phase.                                                                                                                                                                                                                   |
+|    159 |       5 | Proportions of participants receiving formal or informal care were reported and associations with QoL were examined using ordinal (self-rated QoL) and linear (EQ-5D) regression.                                                                                                                                                                                 |
+|     29 |       8 | Our research suggests that PBMT exerts a beneficial neurogenesis modulatory effect through activating the JAK2/STAT4/STAT5 signaling pathway to promote the expression of IFN-γ/IL-10 in non-parenchymal CD4+ T cells, induction of improvement of brain microenvironmental conditions and alleviation of cognitive deficits in APP/PS1 and 3xTg-AD mouse models. |
+|    178 |       1 | Understanding the potential cost-savings or cost-enhancements of Health Information Technology (HIT) can help policymakers understand the capacity of HIT investment to promote population health and health equity for patients with ADRD.                                                                                                                       |
+|    169 |       7 | There was no significant difference in the comparison of the primary outcome measures between the groups in post-treatment results (p \> .05); significant differences in all secondary outcome measures were observed in favor of the TR group (p \< .05), except for the OLST, Katz-ADL, and ZCBI (p \> .05).                                                   |
+|     19 |       8 | The obligation and toll of giving or receiving caregiving were challenging.                                                                                                                                                                                                                                                                                       |
+|     57 |      12 | Only 2 studies described the implementation of a DHI.                                                                                                                                                                                                                                                                                                             |
 
 ## References
 
