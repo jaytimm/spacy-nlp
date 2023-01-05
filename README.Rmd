@@ -112,6 +112,7 @@ import scispacy
 nlp = spacy.load("en_ner_bc5cdr_md")
 
 nlp.add_pipe("sentencizer", first=True)
+nlp.add_pipe("merge_entities")
 
 from scispacy.abbreviation import AbbreviationDetector
 nlp.add_pipe("abbreviation_detector") # before="parser"
@@ -157,6 +158,8 @@ import scispacy
 ```{python eval=FALSE}
 nlp = spacy.load("en_ner_bc5cdr_md")
 nlp.add_pipe("sentencizer", first=True)
+nlp.add_pipe("merge_entities")
+
 from scispacy.abbreviation import AbbreviationDetector
 nlp.add_pipe("abbreviation_detector")
 
@@ -234,7 +237,7 @@ sp_abbrevs = spacyHelp.spacy_get_abbrevs(doc)
 ```{r message=FALSE, warning=FALSE}
 reticulate::py$sp_abbrevs |>
   distinct(abrv, .keep_all = T) |>
-  slice(1:10) |> knitr::kable()
+  sample_n(15) |> knitr::kable()
 ```
 
 
@@ -248,11 +251,13 @@ sp_noun_phrases = spacyHelp.spacy_get_nps(doc)
 
 ```{r message=FALSE, warning=FALSE}
 reticulate::py$sp_noun_phrases |>
-  slice(1:5) |> knitr::kable()
+  sample_n(10) |> knitr::kable()
 ```
 
 
 ### Hyponyms
+
+> Works better with nlp.add_pipe("merge_entities")
 
 ```{python}
 sp_hearst = spacyHelp.spacy_get_hyponyms(doc)
@@ -262,7 +267,7 @@ sp_hearst = spacyHelp.spacy_get_hyponyms(doc)
 
 ```{r}
 reticulate::py$sp_hearst |>
-  slice(1:10) |> knitr::kable()
+  sample_n(15) |> knitr::kable()
 ```
 
 
