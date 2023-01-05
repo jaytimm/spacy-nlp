@@ -1,10 +1,9 @@
 # Some spaCy & scispacy workflows
 
-*Updated: 2022-12-31*
+*Updated: 2023-01-04*
 
 > An attempt at organizing some `spaCy` workflows. Some functions for
-> disentangling `spaCy` output. For working with actual corpora, as
-> opposed to `nlp("This is a sentence.")`.
+> disentangling `spaCy` output.
 
 ------------------------------------------------------------------------
 
@@ -35,8 +34,8 @@ conda install transformers pandas numpy
 
 cd /home/jtimm/anaconda3/envs/scispacy/bin/
 pip install scispacy
-pip install pysbd
-pip install medspacy
+# pip install pysbd
+# pip install medspacy
 pip install textacy
 pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
 pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.4.0/en_ner_bc5cdr_md-0.4.0.tar.gz
@@ -62,11 +61,11 @@ import spacyHelp
 ## PubMed abstracts
 
 ``` r
-dd <- pubmedr::pmed_search_pubmed(search_term = 'political ideology', 
+dd <- pubmedr::pmed_search_pubmed(search_term = 'alzheimers treatment', 
                                   fields = c('TIAB','MH'))
 ```
 
-    ## [1] "political ideology[TIAB] OR political ideology[MH]: 639 records"
+    ## [1] "alzheimers treatment[TIAB] OR alzheimers treatment[MH]: 9999 records"
 
 ``` r
 dd.df <- pubmedr::pmed_get_records2(pmids = unique(dd$pmid)[1:200], 
@@ -113,7 +112,8 @@ from scispacy.linking import EntityLinker
 nlp.add_pipe(
   "scispacy_linker", 
   config={"resolve_abbreviations": True, 
-  "linker_name": "umls"})
+  "linker_name": "mesh"})
+  
 linker = nlp.get_pipe("scispacy_linker")
 
 from scispacy.hyponym_detector import HyponymDetector
@@ -149,32 +149,37 @@ reticulate::py$sp_df |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | token       | token_order | sent_id | lemma       | ent_type | tag | dep   | pos  | is_stop | is_alpha | is_digit | is_punct |
-|----:|:-------|-------:|-----:|:-------|:-----|:---|:----|:---|:-----|:-----|:-----|:-----|
-|      0 | Previous    |           0 |       0 | previous    |          | JJ  | amod  | ADJ  | FALSE   | TRUE     | FALSE    | FALSE    |
-|      0 | attitudinal |           1 |       0 | attitudinal |          | JJ  | amod  | ADJ  | FALSE   | TRUE     | FALSE    | FALSE    |
-|      0 | studies     |           2 |       0 | study       |          | NNS | nsubj | NOUN | FALSE   | TRUE     | FALSE    | FALSE    |
-|      0 | on          |           3 |       0 | on          |          | IN  | case  | ADP  | TRUE    | TRUE     | FALSE    | FALSE    |
-|      0 | immigration |           4 |       0 | immigration |          | NN  | nmod  | NOUN | FALSE   | TRUE     | FALSE    | FALSE    |
+| doc_id | token            | token_order | sent_id | lemma            | ent_type | tag | dep    | pos   | is_stop | is_alpha | is_digit | is_punct |
+|----:|:---------|------:|----:|:---------|:-----|:--|:----|:---|:----|:-----|:-----|:-----|
+|      0 | Currently        |           0 |       0 | currently        |          | RB  | advmod | ADV   | FALSE   | TRUE     | FALSE    | FALSE    |
+|      0 | ,                |           1 |       0 | ,                |          | ,   | punct  | PUNCT | FALSE   | FALSE    | FALSE    | TRUE     |
+|      0 | biological       |           2 |       0 | biological       |          | JJ  | amod   | ADJ   | FALSE   | TRUE     | FALSE    | FALSE    |
+|      0 | membrane-derived |           3 |       0 | membrane-derived |          | JJ  | amod   | ADJ   | FALSE   | FALSE    | FALSE    | FALSE    |
+|      0 | nanoparticles    |           4 |       0 | nanoparticle     |          | NNS | nsubj  | NOUN  | FALSE   | TRUE     | FALSE    | FALSE    |
 
 ### Entities & linking
 
 ``` python
-sp_entities = spacyHelp.spacy_get_entities(doc)
+sp_entities = spacyHelp.spacy_get_entities(doc, link = True, linker = linker)
 ```
 
 ``` r
 reticulate::py$sp_entities |>
-  slice(1:5) |> knitr::kable()
+  slice(1:10) |> knitr::kable()
 ```
 
-| doc_id | sent_id | entity             | label   | start | end | start_char | end_char |
-|-------:|--------:|:-----------------|:--------|------:|----:|----------:|--------:|
-|      2 |       1 | pandemic           | DISEASE |    40 |  41 |        247 |      255 |
-|      2 |       1 | pandemic           | DISEASE |    54 |  55 |        339 |      347 |
-|      2 |       4 | pandemic           | DISEASE |   144 | 145 |        888 |      896 |
-|      3 |       0 | vehicular homicide | DISEASE |    21 |  23 |        131 |      149 |
-|      3 |       1 | vehicular homicide | DISEASE |    36 |  38 |        246 |      264 |
+| doc_id | sent_id | entity                 | label    | start | end | start_char | end_char | uid     | descriptor             | score |
+|----:|-----:|:-------------|:-----|----:|---:|------:|-----:|:-----|:-------------|:----|
+|      0 |       3 | tumor                  | DISEASE  |   102 | 103 |        662 |      667 | D009369 | Neoplasms              | 0.82  |
+|      0 |       4 | cancer                 | DISEASE  |   126 | 127 |        811 |      817 | D009369 | Neoplasms              | 1     |
+|      0 |       4 | inflammation           | DISEASE  |   128 | 129 |        819 |      831 | D007249 | Inflammation           | 1     |
+|      0 |       4 | immunological diseases | DISEASE  |   130 | 132 |        833 |      855 | D007154 | Immune System Diseases | 1     |
+|      0 |       4 | bone diseases          | DISEASE  |   133 | 135 |        857 |      870 | D001847 | Bone Diseases          | 1     |
+|      0 |       4 | Alzheimer’s disease    | DISEASE  |   136 | 139 |        875 |      894 | D000544 | Alzheimer Disease      | 1     |
+|      1 |       0 | Alzheimer disease      | DISEASE  |     0 |   2 |          0 |       17 | D000544 | Alzheimer Disease      | 1     |
+|      1 |       0 | dementia               | DISEASE  |    10 |  11 |         44 |       52 | D003704 | Dementia               | 1     |
+|      1 |       1 | acupuncture            | CHEMICAL |    32 |  33 |        174 |      185 | D026881 | Acupuncture            | 1     |
+|      1 |       1 | AD                     | DISEASE  |    39 |  40 |        221 |      223 | D000544 | Alzheimer Disease      | 1     |
 
 ### Abbreviations
 
@@ -188,18 +193,18 @@ reticulate::py$sp_abbrevs |>
   slice(1:10) |> knitr::kable()
 ```
 
-| doc_id | abrv     | start | end | long_form                                  |
-|-------:|:---------|------:|----:|:-------------------------------------------|
-|      0 | PRRI     |    54 |  55 | Public Religion Research Institute         |
-|      7 | study    |    39 |  40 | Study 1 : N =   47,951                     |
-|      8 | VA       |    26 |  27 | Veterans Administration                    |
-|     13 | PMIE     |    60 |  61 | potentially morally injurious events       |
-|     17 | COVID-19 |    10 |  11 | Coronavirus disease 2019                   |
-|     18 | CDC      |    76 |  77 | Centers for Disease Control and Prevention |
-|     23 | NAM      |    14 |  15 | norm activation model                      |
-|     24 | WVS      |    68 |  69 | World Values Survey                        |
-|     25 | IPV      |    69 |  70 | intimate partner violence                  |
-|     34 | HICs     |     4 |   5 | high-income countries                      |
+| doc_id | abrv        | start | end | long_form                                                                                 |
+|----:|:-------|----:|---:|:--------------------------------------------------|
+|      0 | NPs         |   151 | 152 | nanoparticles                                                                             |
+|      1 | AD          |   273 | 274 | Alzheimer disease                                                                         |
+|      2 | IADL        |    12 |  13 | instrumental activities of daily living ”                                                 |
+|      2 | LEARN       |    71 |  72 | Longitudinal Evaluation of Amyloid Risk and Neurodegeneration                             |
+|      2 | ADCS ADL-PI |   130 | 132 | Alzheimer ’s Disease Cooperative Study Activities of Daily Living - Prevention Instrument |
+|      2 | OR          |   410 | 411 | odds ratio                                                                                |
+|      4 | MIND        |   268 | 269 | Mediterranean-DASH Intervention for Neurodegenerative Delay                               |
+|      6 | PD          |   174 | 175 | Parkinson ’s Disease                                                                      |
+|      6 | Disease     |    10 |  11 | Disease ( PD                                                                              |
+|      6 | HZV         |   106 | 107 | herpes zoster virus                                                                       |
 
 ### Noun phrases
 
@@ -212,13 +217,13 @@ reticulate::py$sp_noun_phrases |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | sent_id | nounc                        | start | end |
-|-------:|--------:|:-----------------------------|------:|----:|
-|      0 |       0 | Previous attitudinal studies |     0 |   3 |
-|      0 |       0 | immigration policies         |    19 |  21 |
-|      0 |       1 | The dearth                   |    22 |  24 |
-|      0 |       1 | the present study            |    31 |  34 |
-|      0 |       2 | individual-level data        |    37 |  39 |
+| doc_id | sent_id | nounc                                     | start | end |
+|-------:|--------:|:------------------------------------------|------:|----:|
+|      0 |       0 | biological membrane-derived nanoparticles |     2 |   5 |
+|      0 |       0 | (NPs                                      |     5 |   7 |
+|      0 |       0 | enormous potential                        |    10 |  12 |
+|      0 |       1 | these NPs                                 |    25 |  27 |
+|      0 |       1 | some methods                              |    34 |  36 |
 
 ### Hyponyms
 
@@ -231,18 +236,18 @@ reticulate::py$sp_hearst |>
   slice(1:10) |> knitr::kable()
 ```
 
-| doc_id | pred    | sbj     | obj               |
-|-------:|:--------|:--------|:------------------|
-|      0 | other   | factors | states            |
-|      0 | such_as | factors | age               |
-|      0 | such_as | factors | ideology          |
-|      0 | such_as | factors | party affiliation |
-|      0 | such_as | factors | region            |
-|      6 | such_as | factors | effort            |
-|      6 | such_as | factors | favoritism        |
-|      6 | such_as | factors | discrimination    |
-|     10 | include | survey  | items             |
-|     10 | include | survey  | sources           |
+| doc_id | pred       | sbj          | obj          |
+|-------:|:-----------|:-------------|:-------------|
+|      4 | include    | study        | participants |
+|      8 | especially | diseases     | Parkinson    |
+|      9 | include    | diseases     | Alzheimer    |
+|     10 | include    | Data sources | interviews   |
+|     10 | such_as    | events       | transition   |
+|     19 | include    | distress     | symptoms     |
+|     19 | include    | distress     | impairment   |
+|     19 | include    | distress     | uncertainty  |
+|     19 | include    | distress     | care         |
+|     19 | include    | distress     | falls        |
 
 ### Negation
 
@@ -257,13 +262,13 @@ reticulate::py$sp_sentences |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | sent_id | text                                                                                                                                                                                                                                                             |
-|--:|---:|:-----------------------------------------------------------------|
-|      0 |       0 | Previous attitudinal studies on immigration in the USA largely focus on the predictors of anti-immigration sentiments compared to examining immigration policies.                                                                                                |
-|      0 |       1 | The dearth of scientific enquiry about the latter necessitated the present study.                                                                                                                                                                                |
-|      0 |       2 | By analyzing individual-level data (n = 1018) obtained from the Public Religion Research Institute (PRRI), we assess the effect of geopolitics-red and blue states and other factors on public attitude towards six immigration policies in the USA (2017-2021). |
-|      0 |       3 | Overall, the results indicate a null relationship between geopolitics and public attitude towards immigration policies.                                                                                                                                          |
-|      0 |       4 | Additionally, we observed several sociodemographic factors, such as age, political ideology, party affiliation, and region, influence public attitude towards immigration policies.                                                                              |
+| doc_id | sent_id | text                                                                                                                                                                                                  |
+|---:|---:|:----------------------------------------------------------------|
+|      0 |       0 | Currently, biological membrane-derived nanoparticles (NPs) have shown enormous potential as drug delivery vehicles due to their outstanding biomimetic properties.                                    |
+|      0 |       1 | To make these NPs more adaptive to complex biological systems, some methods have been developed to modify biomembranes and endow them with more functions while preserving their inherent natures.    |
+|      0 |       2 | In this review, we introduce five common approaches used for biomembrane decoration: membrane hybridization, the postinsertion method, chemical methods, metabolism engineering and gene engineering. |
+|      0 |       3 | These methods can functionalize a series of biomembranes derived from red blood cells, white blood cells, tumor cells, platelets, exosomes and so on.                                                 |
+|      0 |       4 | Biomembrane engineering could markedly facilitate the targeted drug delivery, treatment and diagnosis of cancer, inflammation, immunological diseases, bone diseases and Alzheimer’s disease.         |
 
 ## References
 

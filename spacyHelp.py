@@ -55,7 +55,7 @@ def spacy_get_df(docs):
 
 
 #################  
-def spacy_get_entities(docs, linker = False):
+def spacy_get_entities(docs, link = False, linker = 'linker'):
 
     entity_details_dict = {
       "doc_id": [], 
@@ -66,9 +66,9 @@ def spacy_get_entities(docs, linker = False):
       "end": [],
       "start_char": [],
       "end_char": [],
-      # "cui": [], 
-      # "descriptor": [], 
-      # "score": []
+      "uid": [],
+      "descriptor": [],
+      "score": []
       }
       
     for ix, doc in enumerate(docs):
@@ -83,22 +83,30 @@ def spacy_get_entities(docs, linker = False):
           entity_details_dict["start_char"].append(ent.start_char)
           entity_details_dict["end_char"].append(ent.end_char)
           
-          # if linker = False:
-          #   entity_details_dict["cui"].append('')
-          #   entity_details_dict["descriptor"].append('')
-          #   entity_details_dict["score"].append('')
-          #   
-          #   else:
-          #   score = round(ent._.kb_ents[0][1], 2)
-          #   cui = ent._.kb_ents[0][0]
-          #   descriptor = linker.umls.cui_to_entity[ent._.kb_ents[0][0]][1]
-          #   entity_details_dict["cui"].append(cui)
-          #   entity_details_dict["descriptor"].append(descriptor)
-          #   entity_details_dict["score"].append(score)
-        
-    dd = pd.DataFrame.from_dict(entity_details_dict)
+          
+          if link is True:
+            ee = ent._.kb_ents#[0]
+            
+            if bool(ee):
+              score = round(ee[0][1], 2)
+              uid = ee[0][0]
+              descriptor = linker.kb.cui_to_entity[ee[0][0]][1]
+              
+            else:
+              score = ''
+              uid = ''
+              descriptor = ''
+            
+          else:
+            score = ''
+            uid = ''
+            descriptor = ''
+            
+          entity_details_dict["uid"].append(uid)
+          entity_details_dict["descriptor"].append(descriptor)
+          entity_details_dict["score"].append(score)
+      dd = pd.DataFrame.from_dict(entity_details_dict)
     return dd
-
 
 
 ###################
@@ -199,4 +207,32 @@ def spacy_get_sentences(docs):
     dd =  pd.DataFrame.from_dict(details_dict)     
     return dd
   
+  
+################
+def spacy_get_matches(docs):
+  
+  details_dict = {
+  "doc_id": [], 
+  "string_id": [],
+  "match": [], 
+  "start": [], 
+  "end": []
+  }
+  
+  for ix, dx in enumerate(docs):
+    
+    matches = matcher(dx)
+    
+    for match_id, start, end in matches:
+        string_id = nlp.vocab.strings[match_id] 
+        span = dx[start:end]          
+        details_dict["doc_id"].append(ix)
+        details_dict["string_id"].append(string_id)
+        details_dict["match"].append(span.text)
+        details_dict["start"].append(start)
+        details_dict["end"].append(end)
+      
+  dd =  pd.DataFrame.from_dict(details_dict)     
+  return dd
+
 
