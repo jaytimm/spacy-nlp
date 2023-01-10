@@ -5,7 +5,7 @@ output:
 ---
 
 
-# Some spaCy & scispacy workflows
+# Some spaCy & scispacy wrapper functions
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -16,7 +16,7 @@ source("/home/jtimm/pCloudDrive/GitHub/packages/render_toc.R")
 
 `r paste0('*Updated: ', Sys.Date(),'*')` 
 
-> An attempt at organizing some `spaCy` workflows.  Some functions for disentangling `spaCy` output.   
+> An attempt at organizing some `spaCy` workflows, including some functions for disentangling `spaCy` output as data frames.
 
 ---
 
@@ -161,7 +161,7 @@ from scispacy.hyponym_detector import HyponymDetector
 nlp.add_pipe(
   "hyponym_detector", 
   last = True, 
-  config={"extended": False})
+  config={"extended": True})
 ```
 
 
@@ -259,6 +259,17 @@ reticulate::py$sp_hearst |>
   select(doc_id, sbj, pred, obj) |>
   sample_n(15) |> knitr::kable()
 ```
+
+
+
+#### Relation types:
+
+```{r}
+reticulate::py$sp_hearst |>
+  count(pred) |>
+  knitr::kable()
+```
+
 
 
 
