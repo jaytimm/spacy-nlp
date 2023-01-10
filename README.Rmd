@@ -68,7 +68,8 @@ reticulate::use_condaenv(condaenv = "scispacy",
 
 ```{r message=FALSE, warning=FALSE}
 dd <- pubmedr::pmed_search_pubmed(search_term = 'alzheimers treatment', 
-                                  fields = c('TIAB','MH'))
+                                  fields = c('TIAB','MH'),
+                                  verbose = F)
 
 dd.df <- pubmedr::pmed_get_records2(pmids = unique(dd$pmid)[1:200], 
                                     with_annotations = F)[[1]] |>
@@ -112,7 +113,6 @@ doc = list(nlp.pipe(texts))
 
 ```{python}
 import sys
-#print(sys.path)
 sys.path.append('../home/jtimm/pCloudDrive/GitHub/git-projects/spacy-nlp')
 import spacyHelp
 ```
@@ -129,7 +129,7 @@ import scispacy
 
 
 
-### Scispacy components
+## Scispacy components
 
 * `en_ner_bc5cdr_md`, A spaCy NER model trained on the BC5CDR corpus. For disease and chemical NER. Details for additional models available [here](https://allenai.github.io/scispacy/).
 
@@ -280,70 +280,6 @@ sp_sentences = spacyHelp.spacy_get_sentences(doc)
 reticulate::py$sp_sentences |>
   sample_n(7) |> knitr::kable()
 ```
-
-
-
-
-
-```{python eval=FALSE, include=FALSE}
-## Medical transcript data
-
-# Data from R package `clinspacy` via https://mtsamples.com/
-
-# mts <- clinspacy::dataset_mtsamples()
-# mts_df <- reticulate::r_to_py(mts)
-
-### medspacy
-
-# jupyter-notebook
-import medspacy
-# nlp = spacy.load("en_core_sci_sm")
-nlp = medspacy.load("en_core_sci_sm", disable = {'medspacy_target_matcher', 'medspacy_pyrush'})
-nlp.add_pipe("sentencizer", first = True)
-sectionizer = nlp.add_pipe("medspacy_sectionizer")
-print(nlp.pipe_names)
-
-
-texts0 = list(r.mts_df['transcription'][1:100])
-doc = list(nlp.pipe(texts0))
-
-
-#  is_negated
-#  is_uncertain
-#  is_historical
-#  is_family
-#  is_hypothetical
-
-def spacy_get_transcripts(docs):
-
-    details_dict = {
-      "doc_id": [], 
-      "sent_id": [],
-      "section_category": [],
-      "entity": [], 
-      "is_historical": [],
-      "start": [], 
-      "end": []
-      }
-    
-    for ix, doc in enumerate(docs):
-      for sent_i, sent in enumerate(doc.sents):
-        
-        for ent in sent.ents:
-          details_dict["doc_id"].append(ix)
-          details_dict["sent_id"].append(sent_i)
-          details_dict["section_category"].append(ent._.section_category)
-          details_dict["entity"].append(ent.text)
-          details_dict["is_historical"].append(ent._.is_historical)
-          details_dict["start"].append(ent.start)
-          details_dict["end"].append(ent.end)
-    
-    dd =  pd.DataFrame.from_dict(details_dict)     
-    return dd
-  
-sp_transcripts = spacy_get_transcripts(doc)
-```
-
 
 
 
