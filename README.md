@@ -1,6 +1,6 @@
 # Some spaCy & scispacy wrapper functions
 
-*Updated: 2023-01-10*
+*Updated: 2024-01-12*
 
 > An attempt at organizing some `spaCy` workflows, including some
 > functions for disentangling `spaCy` output as data frames.
@@ -11,7 +11,7 @@
     functions](#some-spacy-&-scispacy-wrapper-functions)
     -   [Conda environment](#conda-environment)
     -   [Reticulate](#reticulate)
-    -   [PubMed abstracts](#pubmed-abstracts)
+    -   [News article corpus](#news-article-corpus)
     -   [Libraries](#libraries)
     -   [Scispacy components](#scispacy-components)
     -   [Spacy annotate](#spacy-annotate)
@@ -30,17 +30,20 @@
 ## Conda environment
 
 ``` bash
-conda create -n scispacy python=3.9
-source activate scispacy 
-conda install transformers pandas numpy
+conda create -n scispacy051 python==3.9
 
-cd /home/jtimm/anaconda3/envs/scispacy/bin/
-pip install scispacy
-# pip install pysbd
-# pip install medspacy
-pip install textacy
+conda activate scispacy051
+
+conda update --all
+conda install nmslib pandas numpy
+pip install dframcy
+
+pip install scispacy==0.5.1
+
+conda install spacy -c conda-forge
+ 
 pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
-pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.4.0/en_ner_bc5cdr_md-0.4.0.tar.gz
+pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_md-0.5.1.tar.gz
 ```
 
 ## Reticulate
@@ -48,24 +51,18 @@ pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.4.0/e
 ``` r
 ## <R-console>
 library(dplyr)
-Sys.setenv(RETICULATE_PYTHON = "/home/jtimm/anaconda3/envs/scispacy/bin/python")
+Sys.setenv(RETICULATE_PYTHON = "/home/jtimm/miniconda3/envs/scispacy051/bin/python")
 library(reticulate)
 #reticulate::use_python("/home/jtimm/anaconda3/envs/m3demo/bin/python")
-reticulate::use_condaenv(condaenv = "scispacy",
-                         conda = "/home/jtimm/anaconda3/bin/conda")
+reticulate::use_condaenv(condaenv = "scispacy051",
+                         conda = "/home/jtimm/miniconda3/bin/conda")
 ```
 
-## PubMed abstracts
+## News article corpus
 
 ``` r
-dd <- pubmedr::pmed_search_pubmed(search_term = 'alzheimers treatment', 
-                                  fields = c('TIAB','MH'),
-                                  verbose = F)
-
-dd.df <- pubmedr::pmed_get_records2(pmids = unique(dd$pmid)[1:200], 
-                                    with_annotations = F)[[1]] |>
-  filter(!is.na(abstract))
-
+dd.df <- textpress::web_scrape_urls(x = 'Alzheimer Disease', cores = 10) |>
+  filter(!is.na(text))
 df <- reticulate::r_to_py(dd.df)
 ```
 
@@ -73,7 +70,7 @@ df <- reticulate::r_to_py(dd.df)
 
 ``` python
 import sys
-sys.path.append('../home/jtimm/pCloudDrive/GitHub/git-projects/spacy-nlp')
+sys.path.append('/home/jtimm/pCloudDrive/GitHub/git-projects/spacy-nlp')
 import spacyHelp
 ```
 
@@ -134,7 +131,7 @@ print(nlp.pipe_names)
 ## Spacy annotate
 
 ``` python
-texts = list(r.df['abstract'])
+texts = list(r.df['text'])
 doc = list(nlp.pipe(texts))
 ```
 
@@ -143,7 +140,7 @@ doc = list(nlp.pipe(texts))
 ### Standard annotation
 
 ``` python
-sp_df = spacyHelp.spacy_get_df(doc)
+sp_df = spacyHelp.spacy_extract_df(doc)
 ```
 
 ``` r
@@ -151,20 +148,19 @@ reticulate::py$sp_df |>
   slice(1:5) |> knitr::kable()
 ```
 
-| doc_id | token     | token_order | sent_id | lemma     | ent_type | tag | dep       | pos  | is_stop | is_alpha | is_digit | is_punct |
-|----:|:------|-------:|-----:|:------|:-----|:---|:------|:---|:-----|:-----|:-----|:-----|
-|      0 | A         |           0 |       0 | a         |          | DT  | det       | DET  | TRUE    | TRUE     | FALSE    | FALSE    |
-|      0 | high      |           1 |       0 | high      |          | JJ  | amod      | ADJ  | FALSE   | TRUE     | FALSE    | FALSE    |
-|      0 | adherence |           2 |       0 | adherence |          | NN  | nsubjpass | NOUN | FALSE   | TRUE     | FALSE    | FALSE    |
-|      0 | to        |           3 |       0 | to        |          | IN  | case      | ADP  | TRUE    | TRUE     | FALSE    | FALSE    |
-|      0 | the       |           4 |       0 | the       |          | DT  | det       | DET  | TRUE    | TRUE     | FALSE    | FALSE    |
+| doc_id | token               | token_order | sent_id | lemma               | ent_type | tag | dep       | pos  | is_stop | is_alpha | is_digit | is_punct |
+|----:|:---------|------:|----:|:---------|:-----|:--|:-----|:---|:----|:-----|:-----|:-----|
+|      0 | Alzheimer’s disease |           0 |       0 | alzheimer’s disease | DISEASE  | NN  | nsubjpass | NOUN | FALSE   | FALSE    | FALSE    | FALSE    |
+|      0 | is                  |           1 |       0 | be                  |          | VBZ | auxpass   | AUX  | TRUE    | TRUE     | FALSE    | FALSE    |
+|      0 | expected            |           2 |       0 | expect              |          | VBN | ROOT      | VERB | FALSE   | TRUE     | FALSE    | FALSE    |
+|      0 | to                  |           3 |       0 | to                  |          | TO  | mark      | PART | TRUE    | TRUE     | FALSE    | FALSE    |
+|      0 | impact              |           4 |       0 | impact              |          | VB  | xcomp     | VERB | FALSE   | TRUE     | FALSE    | FALSE    |
 
 ### Entities & linking
 
 ``` python
-sp_entities = spacyHelp.spacy_get_entities(
+sp_entities = spacyHelp.spacy_extract_entities(
   doc, 
-  link = True, 
   linker = linker)
 ```
 
@@ -173,28 +169,28 @@ reticulate::py$sp_entities |>
   sample_n(15) |> knitr::kable()
 ```
 
-| doc_id | sent_id | entity               | label    | start | end | start_char | end_char | uid        | descriptor                | score |
-|----:|-----:|:-----------|:-----|----:|---:|------:|-----:|:------|:--------------|:----|
-|    182 |       4 | rapamycin            | CHEMICAL |   127 | 128 |        855 |      864 | D020123    | Sirolimus                 | 1     |
-|    118 |       1 | glucose              | CHEMICAL |    24 |  25 |        149 |      156 | D005947    | Glucose                   | 1     |
-|    112 |       3 | IADL/CAT             | CHEMICAL |   151 | 152 |        963 |      971 |            |                           |       |
-|     20 |       8 | whole-brain atrophy  | DISEASE  |   175 | 176 |       1156 |     1175 |            |                           |       |
-|     45 |       2 | pandemic             | DISEASE  |    62 |  63 |        396 |      404 | D058873    | Pandemics                 | 0.83  |
-|     71 |       6 | CRF                  | DISEASE  |   166 | 167 |        996 |      999 | D000072599 | Cardiorespiratory Fitness | 1     |
-|    107 |       3 | cognitive impairment | DISEASE  |    78 |  79 |        491 |      511 | D060825    | Cognitive Dysfunction     | 0.95  |
-|     13 |       7 | MCI                  | DISEASE  |   227 | 228 |       1289 |     1292 | D060825    | Cognitive Dysfunction     | 1     |
-|    176 |       0 | NYT                  | CHEMICAL |     2 |   3 |         15 |       18 |            |                           |       |
-|      4 |       6 | AD                   | DISEASE  |   201 | 202 |       1141 |     1143 | D000544    | Alzheimer Disease         | 1     |
-|    150 |       2 | Alzheimer’s disease  | DISEASE  |    60 |  61 |        423 |      442 | D000544    | Alzheimer Disease         | 1     |
-|     81 |       1 | dementia             | DISEASE  |    50 |  51 |        317 |      325 | D003704    | Dementia                  | 1     |
-|      9 |       5 | neurotoxicity        | DISEASE  |   117 | 118 |        761 |      774 | D020258    | Neurotoxicity Syndromes   | 0.82  |
-|     47 |       3 | AuNS                 | CHEMICAL |    96 |  97 |        681 |      685 |            |                           |       |
-|    187 |       6 | OLST(p \> .05)       | CHEMICAL |   207 | 208 |       1240 |     1253 |            |                           |       |
+| doc_id | sent_id | entity                                          | label    | start |  end | start_char | end_char | uid     | descriptor                      | score |
+|---:|----:|:--------------------|:----|---:|---:|-----:|----:|:----|:-------------|---:|
+|     28 |       2 | amyloid PET                                     | CHEMICAL |    67 |   68 |        420 |      431 | D000682 | Amyloid                         |  0.83 |
+|     17 |     163 | ADAD                                            | DISEASE  |  5550 | 5551 |      27931 |    27935 | D007589 | Job Syndrome                    |  0.80 |
+|     40 |      22 | inflammation                                    | DISEASE  |   657 |  658 |       3449 |     3461 | D007249 | Inflammation                    |  1.00 |
+|     51 |     125 | androsterone sulfate                            | CHEMICAL |  3548 | 3549 |      20477 |    20497 | D043266 | Steryl-Sulfatase                |  0.76 |
+|     49 |      46 | ’                                               | DISEASE  |  1049 | 1050 |       6492 |     6493 | NA      | NA                              |   NaN |
+|      0 |      13 | constipation                                    | DISEASE  |   294 |  295 |       1655 |     1667 | D003248 | Constipation                    |  1.00 |
+|     71 |       7 | dementia                                        | DISEASE  |   120 |  121 |        703 |      711 | D003704 | Dementia                        |  1.00 |
+|     52 |     266 | MAPT                                            | DISEASE  |  7529 | 7530 |      41788 |    41792 | D008869 | Microtubule-Associated Proteins |  0.89 |
+|      5 |      32 | Tau                                             | CHEMICAL |  1079 | 1080 |       6163 |     6166 | D016875 | tau Proteins                    |  0.82 |
+|      7 |       8 | dementia                                        | DISEASE  |   239 |  240 |       1314 |     1322 | D003704 | Dementia                        |  1.00 |
+|     50 |     527 | Herpes simplex virus type 1 and other pathogens | DISEASE  |  8651 | 8652 |      48582 |    48629 | D018259 | Herpesvirus 1, Human            |  0.78 |
+|     63 |      13 | obesity                                         | DISEASE  |   262 |  263 |       1530 |     1537 | D009765 | Obesity                         |  1.00 |
+|     46 |       3 | dementia                                        | DISEASE  |   104 |  105 |        628 |      636 | D003704 | Dementia                        |  1.00 |
+|     85 |      40 | amyloid                                         | CHEMICAL |   745 |  746 |       4124 |     4131 | D000682 | Amyloid                         |  1.00 |
+|      0 |       3 | dementia                                        | DISEASE  |   107 |  108 |        631 |      639 | D003704 | Dementia                        |  1.00 |
 
 ### Abbreviations
 
 ``` python
-sp_abbrevs = spacyHelp.spacy_get_abbrevs(doc)
+sp_abbrevs = spacyHelp.spacy_extract_abbrevs(doc)
 ```
 
 ``` r
@@ -203,54 +199,55 @@ reticulate::py$sp_abbrevs |>
   sample_n(15) |> knitr::kable()
 ```
 
-| doc_id | abrv    | start | end | long_form                                                          |
-|------:|:------|-----:|---:|:-------------------------------------------------|
-|     26 | FA      |   100 | 101 | femoral artery                                                     |
-|      9 | BBB     |    36 |  37 | blood-brain barrier                                                |
-|      4 | MNA     |    71 |  72 | Mini-Nutritional Assessment                                        |
-|     96 | TBI     |    83 |  84 | Traumatic brain injury                                             |
-|    192 | SET     |   100 | 101 | strength and endurance training                                    |
-|     64 | AM      |    56 |  57 | and moxibustion                                                    |
-|     51 | PRISMA  |   173 | 174 | Preferred Reporting Items for Systematic Reviews and Meta-Analyses |
-|     30 | ARIA    |   115 | 116 | amyloid-related imaging abnormalities                              |
-|    178 | SUCRA   |   389 | 390 | surface under the cumulative ranking curve                         |
-|     29 | ADLQ    |   109 | 110 | Activities of Daily Living Questionnaire                           |
-|    176 | NYT     |   111 | 112 | Ninjin’yoeito                                                      |
-|     73 | HD-tDCS |   193 | 194 | high-definition transcranial direct current stimulation            |
-|     26 | α-syn   |   222 | 223 | α-synuclein                                                        |
-|    123 | ANP     |   355 | 356 | Advanced nursing practice                                          |
-|    191 | OAPQ    |   161 | 162 | Older Age Psychotropic Quiz                                        |
+| doc_id | abrv    | start |   end | long_form                                                  |
+|------:|:-------|-----:|-----:|:----------------------------------------------|
+|     51 | DHEAS   |  8578 |  8579 | dehydroepiandrosterone sulfate                             |
+|     51 | OAT3    |  8131 |  8132 | organic anion transporter 3                                |
+|     51 | PERADES |  1859 |  1860 | Polygenic , and Environmental Risk for Alzheimer’s Disease |
+|      5 | MCI     |   100 |   101 | mild cognitive impairment                                  |
+|     42 | MS      |   362 |   363 | multiple sclerosis                                         |
+|     17 | RMSE    |  3109 |  3110 | root mean square error                                     |
+|      4 | ADDF    |   965 |   966 | Alzheimer ’s Drug Discovery Foundation ’s                  |
+|     17 | CIHR    | 10349 | 10350 | Canadian Institutes of Health Research                     |
+|     76 | PBA     |    65 |    66 | 4-phenylbutyrate                                           |
+|     14 | GWAS    |    41 |    42 | Genome-Wide Association Study                              |
+|     17 | APP     |  1020 |  1021 | amyloid precursor protein                                  |
+|     52 | DTT     |  5964 |  5965 | dithiothreitol                                             |
+|     31 | ADNI    |   613 |   614 | Alzheimer ’s Disease Neuroimaging Initiative               |
+|     52 | BCA     |  5766 |  5767 | bicinchoninic acid                                         |
+|     88 | NIH     |    47 |    48 | National Institutes of Health                              |
 
 ### Noun phrases
 
 ``` python
-sp_noun_phrases = spacyHelp.spacy_get_nps(doc)
+sp_noun_phrases = spacyHelp.spacy_extract_nps(doc)
 ```
 
 ``` r
+set.seed(9)
 reticulate::py$sp_noun_phrases |>
   sample_n(10) |> knitr::kable()
 ```
 
-| doc_id | sent_id | nounc                                                  | start | end |
-|------:|-------:|:----------------------------------------------|-----:|----:|
-|     20 |       6 | the 16 mg/day dose                                     |   139 | 143 |
-|    186 |       1 | education                                              |    50 |  51 |
-|    111 |       6 | (PwD                                                   |   166 | 168 |
-|      6 |      11 | a non-pharmaceutical option                            |   265 | 268 |
-|    184 |       4 | higher satisfaction                                    |   134 | 136 |
-|    181 |       2 | a target-sensing catalyst activation (TaSCAc) strategy |    60 |  68 |
-|    103 |       1 | The benefits                                           |    16 |  18 |
-|     30 |       2 | recommendations                                        |    62 |  63 |
-|    187 |       0 | face-to-face treatment                                 |    20 |  22 |
-|     94 |       5 | verum acupuncture treatment                            |   135 | 138 |
+| doc_id | sent_id | nounc                                 | start |  end |
+|-------:|--------:|:--------------------------------------|------:|-----:|
+|     85 |      29 | possible hope                         |   494 |  496 |
+|     17 |      37 | negative EYO values                   |  1185 | 1188 |
+|     76 |      14 | the most prominent protein aggregates |   500 |  505 |
+|     83 |      23 | the bubbles                           |   574 |  576 |
+|     70 |       8 | their caregivers                      |   149 |  151 |
+|     51 |     410 | a historical cohort study             |  8357 | 8361 |
+|     52 |      86 | TREM2 signaling                       |  2342 | 2344 |
+|     51 |      40 | that                                  |   988 |  989 |
+|     56 |      11 | Cerebrospinal fluid                   |   288 |  290 |
+|     51 |       2 | you                                   |    27 |   28 |
 
 ### Hyponyms
 
 > Works better with nlp.add_pipe(“merge_entities”)
 
 ``` python
-sp_hearst = spacyHelp.spacy_get_hyponyms(doc)
+sp_hearst = spacyHelp.spacy_extract_hyponyms(doc)
 ```
 
 ``` r
@@ -259,23 +256,23 @@ reticulate::py$sp_hearst |>
   sample_n(15) |> knitr::kable()
 ```
 
-| doc_id | sbj                                                   | pred       | obj                  |
-|------:|:---------------------------------------|:--------|:----------------|
-|     52 | outcomes                                              | include    | perfusion            |
-|     27 | neurodegenerative diseases                            | include    | Alzheimer’s disease  |
-|     72 | model                                                 | include    | age                  |
-|     88 | agents                                                | such_as    | growth factors       |
-|    144 | parameters                                            | such_as    | evaluation test time |
-|    136 | phytonutrients                                        | such_as    | antioxidants         |
-|     79 | age-related disorders including neurological diseases | such_as    | Alzheimer’s disease  |
-|     59 | neurological and psychiatric disorders                | include    | diabetes             |
-|    189 | viral diseases                                        | such_as    | encephalitis         |
-|    141 | caregiver factors                                     | include    | training status      |
-|      7 | database                                              | such_as    | Wanfang Data         |
-|    136 | phytonutrients                                        | such_as    | vitamins             |
-|    119 | We                                                    | include    | carers               |
-|    149 | medicines                                             | especially | cataract             |
-|     72 | model                                                 | include    | ADL dependency count |
+| doc_id | sbj                         | pred       | obj                      |
+|-------:|:----------------------------|:-----------|:-------------------------|
+|     11 | processes                   | such_as    | neuronal hyperplasticity |
+|      8 | processes                   | such_as    | nerve cell growth        |
+|     52 | subtype                     | compare_to | controls                 |
+|     88 | dementia-related diseases   | like       | vascular dementia        |
+|     10 | lack                        | be_a       | there                    |
+|     51 | functions                   | include    | activities               |
+|      7 | conditions                  | such_as    | heart disease            |
+|     78 | imaging studies             | include    | immunotherapy            |
+|     17 | pipeline                    | include    | registration             |
+|     60 | conditions                  | such_as    | stroke                   |
+|     50 | partner                     | other      | society                  |
+|     58 | link                        | be_a       | there                    |
+|     76 | neurodegenerative disorders | like_other | disease                  |
+|     53 | biomarkers that             | include    | Aß                       |
+|     81 | variations                  | such_as    | barrier impairment       |
 
 #### Relation types:
 
@@ -285,35 +282,44 @@ reticulate::py$sp_hearst |>
   knitr::kable()
 ```
 
-| pred       |   n |
-|:-----------|----:|
-| especially |   3 |
-| include    |  74 |
-| other      |   6 |
-| such_as    |  69 |
+| pred             |   n |
+|:-----------------|----:|
+| and-or_any_other |   2 |
+| be_a             |  41 |
+| compare_to       |  28 |
+| eg               |   2 |
+| for_example      |  17 |
+| include          | 181 |
+| like             |  25 |
+| like_other       |   2 |
+| mainly           |   1 |
+| other            |  47 |
+| other_than       |   1 |
+| particularly     |   3 |
+| such_as          | 106 |
+| type             |   5 |
+| whether          |   5 |
 
 ### Negation
 
 ### Sentences
 
 ``` python
-sp_sentences = spacyHelp.spacy_get_sentences(doc)
+sp_sentences = spacyHelp.spacy_extract_sentences(doc)
 ```
 
 ``` r
 reticulate::py$sp_sentences |>
-  sample_n(7) |> knitr::kable()
+  sample_n(5) |> knitr::kable()
 ```
 
-| doc_id | sent_id | text                                                                                                                                                                                                                                                                                                                            |
-|--:|--:|:-----------------------------------------------------------------|
-|    139 |       2 | Virtual reality (VR) can resemble real life with immersive stimuli, but there have been few studies confirming its ecological effects on ADL and IADL.                                                                                                                                                                          |
-|    120 |       0 | Characterized by the presence of amyloid plaques, neurofibrillary tangles and neuroinflammation, Alzheimer’s disease (AD) is a progressive neurodegenerative disorder with no known treatment or cure.                                                                                                                          |
-|     92 |      11 | Finally, we demonstrate robust xenograft survival at multiple cell doses up to 6 months in both C57BL/6J mice and a transgenic Alzheimer’s disease model (p \< .001).                                                                                                                                                           |
-|     22 |       1 | Pubmed, Scopus, PEDro, Web of Science, CINAHL, Cochrane Library, grey literature and a reverse search from inception to April 2021 were searched to identify documents.                                                                                                                                                         |
-|     79 |       1 | Limited progress has been made in the development of clinically translatable therapies for these central nervous system (CNS) diseases.                                                                                                                                                                                         |
-|     52 |       1 | Meditation practices recently emerged as a promising mental training exercise to foster brain health and reduce dementia risk.                                                                                                                                                                                                  |
-|    111 |       8 | A lower mental and physical health-related quality of life, age of PwD, lower education, higher deficits in daily living activities, higher depressive symptoms, and a higher number of drugs taken of the PwD, as well as female sex of the caregiver were associated with a significantly higher number of tasks carried out. |
+| doc_id | sent_id | text                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+|-:|--:|:-------------------------------------------------------------------|
+|     83 |      49 | That same year, Antonio Regalado reported some of the first exciting results of the Alzheimer’s drug aducanumab.                                                                                                                                                                                                                                                                                                                                                                                                   |
+|     40 |      24 | We have a process where we can take anyone’s natural killer cells, whether or not we take them from somebody who’s young and healthy or somebody who’s had multiple courses of chemotherapy and whose immune system has been beaten up, we can take the natural killer cells and grow them in a way that’s non-genetically modified, but we can turn them into billions of highly enhanced, highly aggressive cells where we dramatically increase the strength of the natural killer cell, the killing potential. |
+|      8 |      28 | Neither your address nor the recipient’s address will be used for any other purpose.                                                                                                                                                                                                                                                                                                                                                                                                                               |
+|      6 |      12 | Strategies targeting eradicating or managing bacterial infections in the stomach may emerge as potential interventions to mitigate Alzheimer’s risk \[4\].                                                                                                                                                                                                                                                                                                                                                         |
+|     60 |      41 | Some people with memory problems have a condition called mild cognitive impairment (MCI).                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ## References
 
